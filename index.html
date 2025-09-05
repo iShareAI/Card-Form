@@ -1,0 +1,822 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Card Builder · 360° + Options</title>
+<style>
+  :root{ --radius:16px; --muted:#6b7280; --border:#e5e7eb; --primary:#635bff; }
+  html,body{margin:0;padding:0;background:#fff;color:#111827;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
+
+  /* 2-column */
+  {display:grid;grid-template-columns:minmax(320px,560px) minmax(300px,520px);gap:24px;align-items:start;padding:16px}
+  @media (max-width:900px){{grid-template-columns:1fr}}
+
+  /* Builder (form) */
+  .builder{padding:16px;border:1px solid var(--border);border-radius:12px}
+  .builder h3{margin:0 0 10px;font-size:18px}
+  .builder label{display:block;font-size:12px;color:var(--muted);margin-top:10px}
+  .row-inline{display:flex;align-items:center;gap:8px}
+  .builder input,.builder select,.builder textarea{width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font:inherit}
+  .builder textarea{min-height:96px}
+  .builder-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .btn{background:var(--primary);color:#fff;border:0;padding:8px 12px;border-radius:8px;cursor:pointer}
+  .btn.secondary{background:#111827}
+  .note{font-size:12px;color:var(--muted)}
+
+  /* Dropzone */
+  .dropzone{margin-top:10px;border:1.5px dashed var(--border);border-radius:12px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;background:#fafafa}
+  .dropzone.over{background:#eef2ff;border-color:#c7d2fe}
+  .dz-text{font-size:12px;color:var(--muted)}
+  .dz-btn{background:#111827;color:#fff;border:0;border-radius:8px;padding:6px 10px;font-size:12px}
+  .dz-file{font-size:12px;color:#6b7280;margin-top:6px}
+
+  
+
+  /* Card (твой стиль) */
+  .card{width:260px}
+  .media{aspect-ratio:9/16;width:100%;border-radius:var(--radius);overflow:hidden;background:#eef1f5;margin-bottom:10px;position:relative;cursor:grab}
+  .media.dragging{cursor:grabbing}
+  .media canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .loader{position:absolute;inset:0;display:grid;place-items:center;color:#6b7280;font-size:12px;background:linear-gradient(180deg,#f6f7f9 0%, #eef0f3 100%)}
+  .loader.hidden{display:none}
+
+  .title{font-weight:600;line-height:1.3;margin:0 0 6px;font-size:15px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}
+  .chip{font-size:12px;line-height:18px;padding:2px 8px;border-radius:9999px;background:#f3f4f6}
+  .chip.health{background:#eef2ff;color:#3b82f6}
+  .chip.tax{background:#ecfdf5;color:#047857}
+  .chip.match{background:#fff7ed;color:#b45309}/* AI chip (same size as other chips) */
+.chip.ai{
+  background:#f5f3ff;   /* soft violet */
+  color:#7c3aed;        /* violet text */
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+.chip.ai .ico{
+  font-size:12px;       /* emoji/icon size */
+  line-height:1;
+}
+
+
+  .bar{height:6px;background:#f3f4f6;border-radius:9999px}
+  .bar>i{display:block;height:100%;width:0;background:var(--primary);border-radius:9999px}
+
+  .row{display:flex;align-items:center;justify-content:space-between;margin-top:4px}
+  .row.stats{position:relative}
+  .small{font-size:12px;color:#6b7280;margin-top:2px}
+
+  .accent{color:#2563eb;font-size:13px;margin-top:6px;margin-bottom:2px}
+  .tiers{position:relative;margin-top:2px}
+  .tier-link{background:none;border:0;padding:0;font:inherit;cursor:pointer;color:#2563eb;text-decoration:none;display:inline-flex;align-items:center;gap:6px;font-size:13px}
+  .tier-link:hover{text-decoration:underline}
+  .tier-link::after{content:"▾";font-size:10px;transform:translateY(1px);transition:.2s}
+  .tier-link[aria-expanded="true"]::after{transform:translateY(1px) rotate(180deg)}
+  .tier-menu{position:absolute;left:0;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.14);overflow:hidden;z-index:10}
+  .tier-row{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;font-size:13px}
+  .tier-row+.tier-row{border-top:1px solid #f3f4f6}
+
+  /* Tooltip (stats) */
+  .raised{cursor:help;border-bottom:1px dotted rgba(99,91,255,.35)}
+  .tooltip{position:absolute;left:0;top:100%;margin-top:8px;z-index:20;width:220px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.14);padding:10px;display:none}
+  .tooltip.open{display:block;animation:pop .12s ease-out}
+  @keyframes pop{from{transform:translateY(4px);opacity:.7}to{transform:none;opacity:1}}
+  .tooltip::before{content:"";position:absolute;top:-6px;left:16px;width:10px;height:10px;background:#fff;border-left:1px solid var(--border);border-top:1px solid var(--border);transform:rotate(45deg)}
+  .spark{width:100%}.line{fill:none;stroke:var(--primary);stroke-width:2}.area{fill:rgba(99,91,255,.12)}.grid{stroke:#f3f4f6;stroke-width:1}
+  /* Spark + animation */
+.spark{ width:100%; height:auto; display:block; }
+.spark .grid{ stroke:#f3f4f6; stroke-width:1; }
+.spark .line{ fill:none; stroke:var(--primary); stroke-width:2; stroke-linecap:round; }
+.spark .area{ fill:rgba(99,91,255,.12); }
+
+/* group scales in when tooltip opens */
+.reveal{
+  transform-origin:left center;
+  transform:scaleX(0);
+  transition:transform .6s cubic-bezier(.2,.8,.2,1);
+}
+.tooltip.open .reveal{ transform:scaleX(1); }
+
+/* line draws itself */
+.animate-stroke{
+  stroke-dasharray: var(--len);
+  stroke-dashoffset: var(--len);
+  transition: stroke-dashoffset .9s ease .1s;
+}
+.tooltip.open .animate-stroke{ stroke-dashoffset: 0; }
+
+/* area fades/slides in */
+.animate-fill{
+  opacity:0;
+  transform: translateY(6px);
+  transition: opacity .6s ease .15s, transform .6s ease .15s;
+}
+.tooltip.open .animate-fill{ opacity:1; transform:none; }
+
+
+  /* Overlay + Share */
+  .media::after{content:"";position:absolute;left:0;right:0;bottom:0;height:80%;background:linear-gradient(to top, rgba(0,0,0,.55), rgba(0,0,0,0));opacity:0;transition:opacity .25s;pointer-events:none;border-bottom-left-radius:var(--radius);border-bottom-right-radius:var(--radius);z-index:1}
+  .media:hover::after,.media.dragging::after{opacity:1}
+  .overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;padding:14px 12px;pointer-events:none;z-index:2}
+  .overlay .line{color:#fff;opacity:0;transform:translateY(10px) scale(.98);filter:blur(6px);transition:opacity .28s, transform .55s, filter .35s}
+  .media:hover .overlay .line,.media.dragging .overlay .line{opacity:1;transform:none;filter:blur(0)}
+  .overlay .tag{font-size:10px;letter-spacing:.08em;text-transform:uppercase;opacity:.9}
+  .overlay .h{font-weight:600;font-size:14px;line-height:1.2}
+  .overlay .sub{font-size:12px;opacity:.9}
+  .overlay .share{display:flex;justify-content:flex-end}
+  .share-btn{pointer-events:auto;background:rgba(255,255,255,.15);border:none;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;transition:background .25s, transform .25s}
+  .share-btn:hover{background:rgba(255,255,255,.3);transform:scale(1.1)}
+
+  /* Chip tooltips */
+  .tip-wrap{position:relative;display:inline-block}
+  .tip{position:absolute;bottom:155%;left:50%;transform:translateX(-50%);width:240px;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.14);padding:10px;font-size:12px;color:#6b7280;line-height:1.35;display:none;z-index:30}
+  .tip::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%) rotate(45deg);width:10px;height:10px;background:#fff;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+  .tip-wrap:hover .tip,.tip-wrap:focus-within .tip{display:block;animation:pop .12s ease-out}
+
+  /* Verified badge */
+  .v-wrap{position:relative;display:inline-block}
+  .v-badge{pointer-events:auto;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#0095F6;color:#fff;border:0;padding:0;box-shadow:0 2px 6px rgba(0,149,246,.35);cursor:help;transition:transform .15s, box-shadow .15s}
+  .v-badge:hover{transform:scale(1.08);box-shadow:0 3px 10px rgba(0,149,246,.4)}
+  .small--org{position:relative;padding-right:22px}
+  .small--org .v-wrap{position:absolute;right:0;top:50%;transform:translateY(-50%)}
+  .v-tip{position:absolute;bottom:175%;right:0;width:220px;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.14);padding:10px;font-size:12px;color:#6b7280;display:none;z-index:30}
+  .v-tip::after{content:"";position:absolute;top:100%;right:6px;transform:rotate(45deg);width:10px;height:10px;background:#fff;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+  .v-wrap:hover .v-tip,.v-wrap:focus-within .v-tip{display:block;animation:pop .12s ease-out}
+
+
+/* lock page scroll; scroll only inside the builder */
+/* блокируем общий скролл страницы, скролл только внутри колонок */
+html, body { height: 100%; }
+body { overflow: hidden; }
+
+/* сетка: страницы ровно пополам по ширине и на всю высоту */
+.layout{
+  display:grid;
+  grid-template-columns: 1fr 1fr;      /* половина на половину */
+  gap:24px;
+  align-items:start;
+  padding:16px;
+  height: 100svh;                       /* стабильная высота вьюпорта */
+  overflow:hidden;
+}
+
+/* левая колонка (форма) — собственный скролл */
+.builder{
+  height:100%;
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-gutter: stable;
+  padding-right:8px;
+  padding-bottom: max(24px, env(safe-area-inset-bottom, 24px));
+}
+
+/* правая колонка — карточка по центру, свой скролл в пределах окна */
+.preview{
+  position: sticky;
+  top: 16px;
+  align-self: start;
+  height: calc(100svh - 32px);
+
+  display: grid;
+  place-items: center;
+  padding: 12px 0;
+
+  overflow: auto;                      /* прокрутка ТОЛЬКО внутри превью */
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+
+/* чтобы карточка не растягивалась по ширине превью */
+.preview .p-col{ width: max-content; }
+
+/* «плоская» картинка (не панорама) — красиво подрезаем */
+.media img.flat{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;                    /* без искажений */
+}
+
+/* мобильный фоллбек: одна колонка и обычный скролл страницы */
+@media (max-width:900px){
+  body{ overflow:auto; }
+  { grid-template-columns:1fr; height:auto; }
+  .preview{ position:static; height:auto; overflow:visible; }
+}
+
+/* Flat-image fallback inside the media viewport */
+.media img.flat {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;   /* не искажать, заполнять */
+  display: block;
+}
+
+
+
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- LEFT: FORM -->
+  <form id="card-form" class="builder" autocomplete="off">
+    <h3>Card Builder</h3>
+
+    <label>Title (before dash)</label><input name="title1" value="Queensway Carleton Hospital">
+    <label>Action (after dash)</label><input name="title2" value="Dedicate a Unit">
+
+    <label>Overlay header</label><input name="overlayH" value="Inside the hospital wing">
+    <label>Overlay sub</label><input name="overlaySub" value="VR · XR">
+
+   
+
+<div id="panoDrop" class="dropzone" tabindex="0" aria-label="Upload panorama">
+<!-- hidden default panorama source -->
+<input type="hidden" name="panoSrc" value="public/img/pano/panorama.jpg">
+
+
+  <span class="dz-text">Drag your panorama here or click</span>
+
+  <!-- Hidden file input (single instance) -->
+  <input id="panoFile" type="file" accept=".jpg,.jpeg,.png,.webp,image/*" hidden>
+
+  <!-- Button bound to the input -->
+  <label for="panoFile" class="dz-btn">Choose file</label>
+
+  <!-- Single file name placeholder -->
+  <span id="panoFileName" class="dz-name"></span>
+</div>
+
+
+    <label>Sector</label>
+    <select name="sector">
+      <option>Health Care</option>
+      <option>Education</option>
+      <option>Culture</option>
+      <option>Community</option>
+      <option>Disaster Relief</option>
+      <option>Faith</option>
+      <option>International Aid</option>
+      <option>Tourism</option>
+    </select>
+    <div class="note">This is the first chip that indicates the project’s sector.</div>
+
+    <label class="row-inline"><input type="checkbox" name="tax" checked> Tax-deductible</label>
+
+    <label>Matching</label>
+    <select name="matching">
+      <option value="none">No matching</option>
+      <option value="1.5">1.5× matching</option>
+      <option value="2" selected>2× matching</option>
+      <option value="3">3× matching</option>
+    </select>
+    <label class="row-inline"><input type="checkbox" name="matchHelper" checked> Show helper chip “sponsor adds $X”</label>
+<label class="row-inline">
+  <input type="checkbox" name="aiAgent" checked>
+  AI Agent · 24/7
+</label>
+
+    <div class="builder-grid">
+      <label>Progress %</label><input name="progress" type="number" min="0" max="100" value="55">
+      <label>Raised (number)</label><input name="raised" type="number" min="0" step="100" value="87400">
+      <label>Days left</label><input name="daysLeft" type="number" min="0" value="40">
+    </div>
+
+    <label>Naming</label><input name="naming" value="120 available of 270">
+    <label>Location</label><input name="location" value="Ottawa, ON">
+
+    <div class="builder-grid">
+      <label>Organization</label><input name="orgName" value="Queensway Carleton Hospital Foundation">
+      <label>Org URL</label><input name="orgUrl" value="https://qchfoundation.ca/">
+    </div>
+
+    <label class="row-inline"><input type="checkbox" name="verified" checked> Verified badge</label>
+
+    <label>Tiers (one per line: “Label | Right text”)</label>
+    <textarea name="tiers">Operating Room Sponsorship | $25k · 2 left
+Patient Care Grant | $5k · 15 left
+Donor Wall Recognition | $1k · 60 left</textarea>
+
+    <div class="builder-grid">
+      <label>Start yaw (°)</label><input name="yaw" type="number" value="200">
+      <label>Start pitch (°)</label><input name="pitch" type="number" value="0">
+    </div>
+    <label class="row-inline"><input type="checkbox" name="wheelZoom"> Enable wheel zoom</label>
+    <label>Auto-rotate (deg/sec)</label>
+<input name="autoRotate" type="number" min="0" step="0.1" value="1">
+
+
+    <div class="actions">
+      <button type="button" id="save" class="btn">Save</button>
+      <button type="button" id="load" class="btn secondary">Load last</button>
+      <button type="button" id="copy-html" class="btn secondary">Copy card HTML</button>
+    </div>
+  </form>
+
+  <!-- RIGHT: PREVIEW -->
+  <div class="preview" id="preview"></div>
+</div>
+
+<!-- CARD TEMPLATE -->
+<template id="card-tpl">
+  <div class="p-col">
+    <article class="card" aria-label="">
+      <div class="media" data-pano>
+        <div class="loader" data-loader>Loading 360°…</div>
+        <div class="overlay">
+          <div class="line tag">360° PANORAMA</div>
+          <div class="line h" data-text="overlayH">Inside the hospital wing</div>
+          <div class="line sub" data-text="overlaySub">VR · XR</div>
+          <div class="line share">
+            <button class="share-btn" aria-label="Share">
+              <!-- classic share -->
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="18" fill="currentColor" aria-hidden="true">
+                <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7a2.5 2.5 0 0 0 0-1.39l7.05-4.11A2.5 2.5 0 1 0 14.5 5a2.5 2.5 0 0 0 0 .22l-7.05 4.11a2.5 2.5 0 1 0 0 5.34l7.05 4.11a2.5 2.5 0 1 0 .5-1.9z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="title"><span data-text="title1">Title</span> —<br><span data-text="title2">Action</span></h2>
+
+      <div class="chips" data-chips></div>
+
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i style="width:0%"></i></div>
+
+      <div class="row small stats">
+        <span class="raised" tabindex="0" aria-describedby=""><span data-text="raisedLabel">$0 raised</span></span>
+        <span data-text="progressPct">0%</span>
+        <div class="tooltip" role="tooltip" aria-hidden="true">
+          <div class="tt-h">Raised over last 3 months</div>
+          <svg class="spark" viewBox="0 0 220 80" width="220" height="80" aria-hidden="true">
+            <path class="grid" d="M10 60 H210 M10 35 H210" />
+            <g class="reveal"><path class="area"></path><path class="line"></path></g>
+          </svg>
+          <div class="tt-f"><strong data-text="raisedTotal">$0</strong> total · 3 months</div>
+        </div>
+      </div>
+
+      <div class="small">Naming: <span data-text="naming">0 available of 0</span></div>
+      <div class="small" data-text="location">City, ST</div>
+
+      <div class="small small--org">
+        by <a class="org" href="#" data-text="orgName">Organization</a>
+        <span class="v-wrap" data-verified style="display:none">
+          <button class="v-badge" aria-label="Verified organization">
+            <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M20.285 6.709l-11 11-5.657-5.657 1.414-1.414L9.285 14.59l9.586-9.586z"/></svg>
+          </button>
+          <span class="v-tip" role="tooltip"><strong>Verified</strong> — this organization has been reviewed and confirmed by our team.</span>
+        </span>
+      </div>
+
+      <div class="accent" data-text="daysLeft">0 days left</div>
+
+      <div class="tiers">
+        <button class="tier-link" type="button" aria-expanded="false">View naming tiers</button>
+        <div class="tier-menu" role="menu" hidden data-tiers></div>
+      </div>
+    </article>
+  </div>
+</template>
+
+<script type="module">
+  import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
+
+  /* Helpers */
+  const $ = (s, r=document)=>r.querySelector(s);
+  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+  const uid = (p='id') => p + '-' + Math.random().toString(36).slice(2,8);
+  const money = n => '$' + Number(n||0).toLocaleString('en-US');
+
+  /* Проверка существующего пути (не трогаем blob:/data:) */
+  function pickExisting(paths){
+    return new Promise(resolve=>{
+      let i=0;(function tryNext(){
+        if(i>=paths.length){ resolve(null); return; }
+        let p = paths[i++], im = new Image();
+        const special = p.startsWith('blob:') || p.startsWith('data:');
+        im.onload = ()=>resolve(p);
+        im.onerror = tryNext;
+        im.src = special ? p : p + (p.includes('?')?'&':'?') + 'v=' + Date.now();
+      })();
+    });
+  }
+
+  /* ИНИЦИАЛИЗАЦИЯ ПАНОРАМЫ ПО ЭЛЕМЕНТАМ (ленивая) */
+  /* ИНИЦИАЛИЗАЦИЯ МЕДИА: панорама (2:1) → three.js, иначе — плоская картинка */
+function initPanoEl(container, loaderEl, candidates, opts = {}) {
+  if (!container || !loaderEl) return;
+
+  // управление
+  let lon = Number(opts.yaw || 0), lat = Number(opts.pitch || 0);
+  const autoDegPerSec = Number(opts.autoRotate || 0);
+  const allowWheel = !!opts.wheelZoom;
+
+  // выбрать реальный путь
+  const first = (candidates && candidates[0]) || '';
+  const isSpecial = first.startsWith('blob:') || first.startsWith('data:');
+  const loadPathPromise = isSpecial ? Promise.resolve(first) : pickExisting(candidates);
+
+  loadPathPromise.then((path) => {
+    if (!path) { loaderEl.textContent = 'Panorama not found'; return; }
+
+    // предварительно загружаем как <img>, чтобы понять соотношение сторон
+    const probe = new Image();
+    probe.onload = () => {
+      const ratio = probe.naturalWidth / probe.naturalHeight;
+      const isPano = isFinite(ratio) && ratio > 1.7 && ratio < 2.3; // ~2:1
+
+      if (!isPano) {
+        // ФОЛБЭК: обычная картинка без three.js
+        loaderEl.classList.add('hidden');
+        const img = document.createElement('img');
+        img.className = 'flat';
+        img.alt = 'Image';
+        img.src = path;
+        container.appendChild(img);
+        return;
+      }
+
+      // PANORAMA (three.js)
+      let renderer, scene, camera, animId;
+      let isDragging = false, onDownLon = 0, onDownLat = 0, startX = 0, startY = 0;
+
+      function resize() {
+        const w = container.clientWidth, h = container.clientHeight;
+        if (!w || !h || !camera || !renderer) return;
+        camera.aspect = w / h; camera.updateProjectionMatrix();
+        renderer.setSize(w, h, false);
+      }
+
+      function onPointerDown(e){ isDragging=true; container.classList.add('dragging'); startX=e.clientX; startY=e.clientY; onDownLon=lon; onDownLat=lat; }
+      function onPointerMove(e){ if(!isDragging) return; const dx=e.clientX-startX, dy=e.clientY-startY; lon=onDownLon-dx*0.12; lat=Math.max(-85,Math.min(85,onDownLat+dy*0.12)); }
+      function onPointerUp(){ isDragging=false; container.classList.remove('dragging'); }
+      function onWheel(e){ if(!allowWheel) return; const f=Math.max(40,Math.min(90,(camera?.fov||75)+e.deltaY*0.03)); camera.fov=f; camera.updateProjectionMatrix(); }
+      function render(){ renderer.render(scene,camera); }
+      function animate(){
+        animId = requestAnimationFrame(animate);
+        if(!isDragging && autoDegPerSec){ lon += (autoDegPerSec/60); }
+        const phi = THREE.MathUtils.degToRad(90 - lat);
+        const theta = THREE.MathUtils.degToRad(lon);
+        camera.lookAt(new THREE.Vector3(
+          500*Math.sin(phi)*Math.cos(theta),
+          500*Math.cos(phi),
+          500*Math.sin(phi)*Math.sin(theta)
+        ));
+        render();
+      }
+
+      // сцена
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1100);
+      const geo = new THREE.SphereGeometry(500, 60, 40); geo.scale(-1,1,1);
+      const mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      scene.add(new THREE.Mesh(geo, mat));
+
+      renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.5));
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      container.appendChild(renderer.domElement);
+
+      // текстура
+      new THREE.TextureLoader().load(path, (tex)=>{
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.minFilter  = THREE.LinearFilter;
+        mat.map = tex; mat.needsUpdate = true;
+        loaderEl.classList.add('hidden');
+        render();
+      }, undefined, ()=>{ loaderEl.textContent='Failed to load pano'; });
+
+      // события
+      resize(); new ResizeObserver(resize).observe(container);
+      container.addEventListener('pointerdown', onPointerDown);
+      container.addEventListener('pointermove',  onPointerMove);
+      container.addEventListener('pointerup',    onPointerUp);
+      container.addEventListener('pointerleave', onPointerUp);
+      container.addEventListener('wheel', onWheel, {passive:true});
+      document.addEventListener('visibilitychange', ()=>{ if(document.hidden) cancelAnimationFrame(animId); else animate(); });
+
+      animate();
+    };
+    probe.onerror = () => { loaderEl.textContent = 'Failed to load image'; };
+    // кэш-брейкер для не data:/blob:
+    probe.src = isSpecial ? path : path + (path.includes('?')?'&':'?') + 'v=' + Date.now();
+  });
+}
+
+  /* Template → DOM helpers */
+  function fillTexts(root, data){
+  $$('[data-text]',root).forEach(n=>{
+    const k = n.dataset.text;
+    if (k === 'orgName') {
+      n.textContent = data.orgName || '';
+      n.setAttribute('href', data.orgUrl || '#');
+      n.setAttribute('target', '_blank');               // open in new tab
+      n.setAttribute('rel', 'noopener noreferrer');     // security
+    } else {
+      n.textContent = data[k] ?? '';
+    }
+  });
+}
+
+
+
+
+
+
+  function renderChips(root, chips){
+  const host = root.querySelector('[data-chips]');
+  host.innerHTML = '';
+  (chips || []).forEach((chip) => {
+    const [textRaw, tip] = String(chip).split('::');
+    const text = textRaw.trim();
+
+    // map text → class
+    let cls = 'chip';
+    if (/^health care$/i.test(text)) cls = 'chip health';
+    else if (/^tax-deductible$/i.test(text)) cls = 'chip tax';
+    else if (/×\s*matching/i.test(text)) cls = 'chip match';
+    else if (/^ai agent/i.test(text)) cls = 'chip ai';
+
+    const el = document.createElement('span');
+    if (tip && tip.trim()){
+      const tipId = uid('tip');
+      el.className = cls + ' tip-wrap';
+      el.tabIndex = 0;
+      el.setAttribute('aria-describedby', tipId);
+      el.innerHTML = `${text}<span class="tip" id="${tipId}" role="tooltip">${tip.trim()}</span>`;
+    } else {
+      el.className = cls;
+      el.textContent = text;
+    }
+    host.appendChild(el);
+  });
+}
+
+
+  function renderProgress(root,pct,raised){
+    const bar=root.querySelector('.bar'),fill=bar.querySelector('i'),stats=root.querySelector('.row.small.stats');
+    bar.setAttribute('aria-valuenow',pct); fill.style.width=pct+'%';
+    stats.querySelector('[data-text="raisedLabel"]').textContent = `${money(raised)} raised`;
+    stats.querySelector('[data-text="progressPct"]').textContent = `${pct}%`;
+    stats.querySelector('[data-text="raisedTotal"]').textContent = money(raised);
+    const tip=stats.querySelector('.tooltip'), raisedEl=stats.querySelector('.raised'), tipId=uid('tt'); tip.id=tipId; raisedEl.setAttribute('aria-describedby',tipId);
+    ['mouseenter','focus'].forEach(ev=>raisedEl.addEventListener(ev,()=>tip.classList.add('open')));
+    ['mouseleave','blur'].forEach(ev=>raisedEl.addEventListener(ev,()=>tip.classList.remove('open')));
+    function buildSparkPaths(vals, w=220, h=80, pad=10){
+  const mx = Math.max(...vals, 1);
+  const innerW = w - pad*2, innerH = h - pad*2;
+  const step = innerW / (vals.length - 1);
+  let d = '';
+  vals.forEach((v,i)=>{
+    const x = pad + i*step;
+    const y = h - pad - (v/mx)*innerH;
+    d += (i ? 'L':'M') + x + ',' + y;
+  });
+  const area = `${d} L ${pad + innerW},${h - pad} L ${pad},${h - pad} Z`;
+  return { line: d, area };
+}
+
+function setupSparkTooltip(tooltipEl, values){
+  const svg  = tooltipEl.querySelector('svg.spark');
+  const line = svg.querySelector('path.line');
+  const area = svg.querySelector('path.area');
+
+  const { line: dl, area: da } = buildSparkPaths(values);
+  line.setAttribute('d', dl);
+  area.setAttribute('d', da);
+
+  // prepare animation
+  const len = line.getTotalLength();
+  line.style.setProperty('--len', String(len));
+  line.classList.add('animate-stroke');
+  area.classList.add('animate-fill');
+}
+// example series (замени на реальные, если есть)
+const series = Array.from({length:12}, (_,i)=> Math.round((i+1) * (raised/12) * (0.7 + Math.random()*0.6)));
+setupSparkTooltip(root.querySelector('.tooltip'), series);
+
+
+  }
+
+  function renderTiers(root,lines){
+    const host=root.querySelector('[data-tiers]'); host.innerHTML='';
+    (lines||[]).forEach(line=>{ const [l,r]=(line||'').split('|').map(s=>(s||'').trim()); const row=document.createElement('div'); row.className='tier-row'; row.innerHTML=`<span>${l}</span><span>${r}</span>`; host.appendChild(row); });
+  }
+
+  function renderVerified(root,on){ root.querySelector('[data-verified]').style.display = on ? 'inline-block' : 'none'; }
+  function wireShare(root){ const b=root.querySelector('.share-btn'); if(!b) return; b.addEventListener('click',async e=>{ e.preventDefault(); const title=root.querySelector('.title')?.textContent?.trim()||'Project'; const url=location.href; if(navigator.share){ try{await navigator.share({title,url});}catch{} } else { await navigator.clipboard.writeText(url); b.title='Link copied'; setTimeout(()=>b.title='',1500); } }); }
+  function wireTiers(root){ const btn=root.querySelector('.tier-link'),menu=root.querySelector('.tier-menu'); if(!btn||!menu) return; btn.addEventListener('click',e=>{ const open=menu.hasAttribute('hidden'); menu.toggleAttribute('hidden'); btn.setAttribute('aria-expanded',open?'true':'false'); e.preventDefault(); e.stopPropagation(); }); }
+
+  /* Построение карточки (ленивая инициализация панорамы) */
+  const tpl = document.getElementById('card-tpl');
+  function makeCard(data){
+    const frag = tpl.content.cloneNode(true);
+    const article=frag.querySelector('.card');
+    article.setAttribute('aria-label', `${data.title1} — ${data.title2}`);
+
+    fillTexts(frag,{
+      title1:data.title1, title2:data.title2, overlayH:data.overlayH, overlaySub:data.overlaySub,
+      raisedLabel:`${money(data.raised)} raised`, progressPct:`${data.progress}%`, raisedTotal:money(data.raised),
+      naming:data.naming, location:data.location, orgName:data.orgName, orgUrl:data.orgUrl, daysLeft:`${data.daysLeft} days left`
+    });
+
+    renderChips(frag, data.chips);
+    renderProgress(frag, data.progress||0, data.raised||0);
+    renderTiers(frag, data.tiers||[]);
+    renderVerified(frag, !!data.verified);
+    wireShare(frag); wireTiers(frag);
+
+    const pane   = frag.querySelector('[data-pano]');
+    const loader = frag.querySelector('[data-loader]');
+    const init = () => initPanoEl(pane, loader, [data.panoSrc], {
+      yaw:data.yaw, pitch:data.pitch, autoRotate:data.autoRotate, wheelZoom:data.wheelZoom
+    });
+
+    return { node: frag, init };
+  }
+
+  /* Чипы из опций формы */
+  const sectorTip = 'Choose the sector that resonates with your heart — this chip labels the project’s cause.';
+  const taxTip    = 'Your donation is eligible for an official tax receipt (subject to local rules).';
+  const matchTip  = (m)=>`For every $1 you give, our sponsor adds $${(parseFloat(m)-1).toFixed(1).replace(/\.0$/,'')}. Matching applies up to the campaign’s cap or deadline.`;
+
+function buildChipsFromOptions(fd){
+  const chips = [];
+  const sector = fd.get('sector') || 'Health Care';
+  chips.push(`${sector}::Choose the sector that resonates with your heart — this chip labels the project’s cause.`);
+
+  if (fd.get('tax')) {
+    chips.push(`Tax-deductible::Your donation is eligible for an official tax receipt (subject to local rules).`);
+  }
+
+  const m = fd.get('matching');
+  if (m && m !== 'none') {
+    const mult = parseFloat(m);
+    const added = (mult - 1).toFixed(1).replace(/\.0$/, '');
+    chips.push(`${m}× matching::For every $1 you give, our sponsor adds $${added}. Matching applies up to the campaign’s cap or deadline.`);
+
+    if (fd.get('matchHelper')) {
+      const add = mult - 1;
+      const addText = Number.isInteger(add) ? add.toFixed(0) : (add.toFixed(1).replace(/\.0$/, ''));
+      chips.push(`sponsor adds $${addText}::Sponsor adds this amount per $1 you give (until the campaign’s matching cap or deadline).`);
+    }
+  }
+
+  // NEW: AI Agent chip
+  if (fd.get('aiAgent')) {
+    chips.push(`AI Agent · 24/7::Our always-on AI assistant is available around the clock to help donors.`);
+  }
+
+  return chips;
+}
+
+
+function readForm(form){
+  const fd = new FormData(form);
+
+  const num = (key, def = 0) => {
+    const v = parseFloat(fd.get(key));
+    return Number.isFinite(v) ? v : def;
+  };
+  const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
+
+  const tiers = (fd.get('tiers') || '')
+    .split('\n')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  return {
+    title1: fd.get('title1') || '',
+    title2: fd.get('title2') || '',
+    overlayH: fd.get('overlayH') || '',
+    overlaySub: fd.get('overlaySub') || '',
+
+    // panorama fallback (и всё равно держите hidden input name="panoSrc")
+    panoSrc: fd.get('panoSrc') || 'public/img/pano/panorama.jpg',
+
+    chips: buildChipsFromOptions(fd),
+
+    progress: clamp(num('progress', 0), 0, 100),
+    raised: Math.max(0, num('raised', 0)),
+    daysLeft: Math.max(0, num('daysLeft', 0)),
+
+    naming: fd.get('naming') || '',
+    location: fd.get('location') || '',
+
+    orgName: fd.get('orgName') || '',
+    orgUrl:  fd.get('orgUrl')  || '#',
+
+    verified: !!fd.get('verified'),
+    tiers,
+
+    yaw:   num('yaw', 0),
+    pitch: num('pitch', 0),
+
+    // default auto-rotate = 1 deg/sec
+    autoRotate: num('autoRotate', 1),
+
+    wheelZoom: !!fd.get('wheelZoom')
+  };
+}
+
+
+  /* Live preview */
+  const form = document.getElementById('card-form');
+  const preview = document.getElementById('preview');
+  function ensurePanoHiddenInput() {
+  if (!form.elements.panoSrc) {
+    const hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'panoSrc';
+    hidden.value = 'public/img/pano/panorama.jpg';
+    form.appendChild(hidden);
+  }
+}
+ensurePanoHiddenInput();
+
+
+  function renderPreview(){
+    preview.innerHTML = '';
+    const built = makeCard( readForm(form) );
+    preview.appendChild(built.node);   // сначала вставили в DOM
+    built.init();                      // затем инициализировали three.js
+  }
+  form.addEventListener('input', renderPreview);
+  form.addEventListener('change', renderPreview);
+  renderPreview();
+
+  /* Copy HTML */
+  document.getElementById('copy-html').addEventListener('click', async ()=>{
+    const card = preview.querySelector('.card');
+    const html = card ? card.outerHTML : '';
+    if(!html) return alert('Nothing to copy.');
+    try{ await navigator.clipboard.writeText(html); alert('Card HTML copied.'); }
+    catch{ const ta=document.createElement('textarea'); ta.value=html; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); alert('Copied.'); }
+  });
+
+  /* Save / Load */
+  document.getElementById('save').addEventListener('click', ()=>{
+    const data = readForm(form);
+    localStorage.setItem('cardDraft', JSON.stringify(data));
+    const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = (data.title1||'card') + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+  document.getElementById('load').addEventListener('click', ()=>{
+    const raw = localStorage.getItem('cardDraft');
+    if(!raw){ alert('No saved draft found.'); return; }
+    const d = JSON.parse(raw);
+    for (const [k,v] of Object.entries(d)){
+      if (k in form.elements && typeof form.elements[k].value !== 'undefined' && typeof v !== 'object'){
+        form.elements[k].value = v;
+      }
+    }
+    form.elements.tax.checked = d.chips?.some(c=>String(c).startsWith('Tax-deductible'));
+    const matchChip = (d.chips||[]).find(c=>/× matching/.test(c));
+    form.elements.matching.value = matchChip ? matchChip.split('×')[0] : 'none';
+    form.elements.matchHelper.checked = d.chips?.some(c=>String(c).startsWith('sponsor adds'));
+    form.elements.verified.checked = !!d.verified;
+    renderPreview();
+  });
+
+  /* Upload / Drag&Drop — FileReader → data:URL */
+  const panoDrop = document.getElementById('panoDrop');
+  const panoFile = document.getElementById('panoFile');
+  const panoName = document.getElementById('panoFileName');
+
+  function adoptFile(file){
+  if(!file){ alert('Please choose an image file.'); return; }
+  const okMime = file.type && file.type.startsWith('image/');
+  const okExt  = /\.(jpe?g|png|webp)$/i.test(file.name || '');
+  if(!okMime && !okExt){ alert('Please choose a JPG/PNG/WEBP image.'); return; }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    ensurePanoHiddenInput();                         // ← make sure it exists
+    const url = reader.result;                       // data:image/...
+    form.elements.panoSrc.value = url;
+    panoName.textContent = 'Loaded: ' + (file.name || 'image');
+    renderPreview();
+  };
+  reader.readAsDataURL(file);
+}
+
+
+  panoDrop.addEventListener('click', ()=> panoFile.click());
+  panoDrop.addEventListener('keydown', e=>{ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); panoFile.click(); } });
+  panoDrop.querySelector('.dz-btn').addEventListener('click', e=>{ e.preventDefault(); panoFile.click(); });
+  panoFile.addEventListener('change', ()=> adoptFile(panoFile.files[0]));
+  panoDrop.addEventListener('dragover', e=>{ e.preventDefault(); panoDrop.classList.add('over'); });
+  panoDrop.addEventListener('dragleave', ()=> panoDrop.classList.remove('over'));
+  panoDrop.addEventListener('drop', e=>{ e.preventDefault(); panoDrop.classList.remove('over'); const f=e.dataTransfer.files?.[0]; if(f) adoptFile(f); });
+</script>
+</body>
+</html>
