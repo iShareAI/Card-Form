@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Catalog · Campaigns</title>
+<style>
+  :root{ --radius:16px; --muted:#6b7280; --border:#e5e7eb; --primary:#635bff; }
+
+  html,body{margin:0;padding:0;background:#fff;color:#111827;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
+
+  .wrap{max-width:1400px;margin:0 auto;padding:24px}
+  .hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .hdr h1{font-size:18px;margin:0}
+  .hdr a{font-size:14px;color:#2563eb;text-decoration:none}
+  .hdr a:hover{text-decoration:underline}
+
+  /* Masonry container: абсолютная раскладка */
+
+
+
+
+  
+  #catalog{
+    position:relative;
+    min-height:120px;
+  }
+  #catalog:empty::after{
+    content:"No items yet — open the Builder and click “Launch campaign”.";
+    color:var(--muted);font-size:14px;position:absolute;left:0;right:0;top:0;text-align:center;
+  }
+
+  /* Колонка-карточка (обёртка) — позиционируем скриптом */
+  .p-col{
+    position:absolute;
+    will-change:transform,height;
+    width:280px; /* будет переопределено скриптом */
+  }
+
+  /* ===== Card (как в билдере) ===== */
+  .card{width:100%}
+  .media{aspect-ratio:9/16;width:100%;border-radius:var(--radius);overflow:hidden;
+    background:#eef1f5;margin-bottom:10px;position:relative;cursor:grab}
+  .media.dragging{cursor:grabbing}
+  .media canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .loader{position:absolute;inset:0;display:grid;place-items:center;color:#6b7280;font-size:12px;
+    background:linear-gradient(180deg,#f6f7f9 0%, #eef0f3 100%)}
+  .loader.hidden{display:none}
+
+  .title{font-weight:600;line-height:1.3;margin:0 0 6px;font-size:15px}
+  .title a[data-project-link]{position:relative;display:inline-block;text-decoration:none;color:inherit;border-radius:8px;transition:transform .2s ease}
+  .title a[data-project-link]::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:2px;background:linear-gradient(90deg,var(--primary),#a78bfa);transform:scaleX(0);transform-origin:left;opacity:0;transition:transform .35s cubic-bezier(.2,.8,.2,1),opacity .2s}
+  .title a[data-project-link]:hover::after,.title a[data-project-link]:focus-visible::after{transform:scaleX(1);opacity:1}
+  .title a[data-project-link]:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(99,91,255,.28)}
+
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}
+  .chip{font-size:12px;line-height:18px;padding:2px 8px;border-radius:9999px;background:#f3f4f6}
+  .chip.health{background:#eef2ff;color:#3b82f6}
+  .chip.tax{background:#ecfdf5;color:#047857}
+  .chip.match{background:#fff7ed;color:#b45309}
+  .chip.ai{background:#f5f3ff;color:#7c3aed;display:inline-flex;align-items:center;gap:6px}
+
+  .bar{height:6px;background:#f3f4f6;border-radius:9999px}
+  .bar>i{display:block;height:100%;width:0;background:var(--primary);border-radius:9999px}
+
+  .row{display:flex;align-items:center;justify-content:space-between;margin-top:4px}
+  .row.stats{position:relative}
+  .small{font-size:12px;color:#6b7280;margin-top:2px}
+
+  .accent{color:#2563eb;font-size:13px;margin-top:6px;margin-bottom:2px}
+  .tiers{position:relative;margin-top:2px}
+  .tier-link{background:none;border:0;padding:0;font:inherit;cursor:pointer;color:#2563eb;text-decoration:none;display:inline-flex;align-items:center;gap:6px;font-size:13px}
+  .tier-link:hover{text-decoration:underline}
+  .tier-link::after{content:"▾";font-size:10px;transform:translateY(1px);transition:.2s}
+  .tier-link[aria-expanded="true"]::after{transform:translateY(1px) rotate(180deg)}
+  .tier-menu{position:absolute;left:0;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.14);overflow:hidden;z-index:10}
+  .tier-row{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;font-size:13px}
+  .tier-row+.tier-row{border-top:1px solid #f3f4f6}
+
+  .raised{cursor:help;border-bottom:1px dotted rgba(99,91,255,.35)}
+  .tooltip{position:absolute;left:0;top:100%;margin-top:8px;z-index:20;width:220px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.14);padding:10px;display:none}
+  .tooltip.open{display:block;animation:pop .12s ease-out}
+  @keyframes pop{from{transform:translateY(4px);opacity:.7}to{transform:none;opacity:1}}
+  .tooltip::before{content:"";position:absolute;top:-6px;left:16px;width:10px;height:10px;background:#fff;border-left:1px solid var(--border);border-top:1px solid var(--border);transform:rotate(45deg)}
+  .spark{width:100%}.line{fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round}.area{fill:rgba(99,91,255,.12)}.grid{stroke:#f3f4f6;stroke-width:1}
+
+  .reveal{transform-origin:left center;transform:scaleX(0);transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+  .tooltip.open .reveal{transform:scaleX(1)}
+  .animate-stroke{stroke-dasharray:var(--len);stroke-dashoffset:var(--len);transition:stroke-dashoffset .9s ease .1s}
+  .tooltip.open .animate-stroke{stroke-dashoffset:0}
+  .animate-fill{opacity:0;transform:translateY(6px);transition:opacity .6s ease .15s, transform .6s ease .15s}
+  .tooltip.open .animate-fill{opacity:1;transform:none}
+
+  .media::after{content:"";position:absolute;left:0;right:0;bottom:0;height:80%;background:linear-gradient(to top, rgba(0,0,0,.55), rgba(0,0,0,0));opacity:0;transition:opacity .25s;pointer-events:none;border-bottom-left-radius:var(--radius);border-bottom-right-radius:var(--radius);z-index:1}
+  .media:hover::after,.media.dragging::after{opacity:1}
+  .overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;padding:14px 12px;pointer-events:none;z-index:2}
+  .overlay .line{color:#fff;opacity:0;transform:translateY(10px) scale(.98);filter:blur(6px);transition:opacity .28s, transform .55s, filter .35s}
+  .media:hover .overlay .line,.media.dragging .overlay .line{opacity:1;transform:none;filter:blur(0)}
+  .overlay .tag{font-size:10px;letter-spacing:.08em;text-transform:uppercase;opacity:.9}
+  .overlay .h{font-weight:600;font-size:14px;line-height:1.2}
+  .overlay .sub{font-size:12px;opacity:.9}
+  .overlay .share{display:flex;justify-content:flex-end}
+  .share-btn{pointer-events:auto;background:rgba(255,255,255,.15);border:none;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;transition:background .25s, transform .25s}
+  .share-btn:hover{background:rgba(255,255,255,.3);transform:scale(1.1)}
+
+  .pager-in{position:absolute;left:0;right:0;bottom:10px;display:flex;justify-content:center;gap:6px;z-index:3;pointer-events:auto}
+  .pager-in .dot{width:6px;height:6px;border-radius:50%;padding:0;border:1.25px solid hsla(0,0%,100%,.95);background:transparent;opacity:.9;cursor:pointer;display:inline-block;position:relative;appearance:none;transition:transform .12s ease, opacity .12s ease}
+  .pager-in .dot::after{content:"";position:absolute;inset:-6px}
+  .pager-in .dot[aria-current="true"]{background:#fff;border-color:#fff}
+  .pager-in .dot:hover{transform:scale(1.15)}
+  .pager-in .dot:focus-visible{outline:0;box-shadow:0 0 0 3px rgba(255,255,255,.35)}
+
+  .v-wrap{position:relative;display:inline-block}
+  .v-badge{pointer-events:auto;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#0095F6;color:#fff;border:0;padding:0;box-shadow:0 2px 6px rgba(0,149,246,.35);cursor:help;transition:transform .15s, box-shadow .15s}
+  .v-badge:hover{transform:scale(1.08);box-shadow:0 3px 10px rgba(0,149,246,.4)}
+  .small--org{position:relative;padding-right:22px}
+  .small--org .v-wrap{position:absolute;right:0;top:50%;transform:translateY(-50%)}
+  .v-tip{position:absolute;bottom:175%;right:0;width:220px;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.14);padding:10px;font-size:12px;color:#6b7280;display:none;z-index:30}
+  .v-tip::after{content:"";position:absolute;top:100%;right:6px;transform:rotate(45deg);width:10px;height:10px;background:#fff;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+  .v-wrap:hover .v-tip,.v-wrap:focus-within .v-tip{display:block;animation:pop .12s ease-out}
+
+  .media img.flat{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+
+  .tip-wrap{position:relative;display:inline-block}
+  .tip{
+    position:absolute;bottom:155%;left:50%;transform:translateX(-50%);
+    width:240px;background:#fff;border:1px solid var(--border);border-radius:10px;
+    box-shadow:0 12px 32px rgba(0,0,0,.14);padding:10px;font-size:12px;color:#6b7280;
+    line-height:1.35;display:none;z-index:30
+  }
+  .tip::after{
+    content:"";position:absolute;top:100%;left:50%;
+    transform:translateX(-50%) rotate(45deg);width:10px;height:10px;background:#fff;
+    border-right:1px solid var(--border);border-bottom:1px solid var(--border)
+  }
+  .tip-wrap:hover .tip,.tip-wrap:focus-within .tip{display:block;animation:pop .12s ease-out}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hdr">
+      <h1>Catalog</h1>
+      <a href="./" target="_blank" rel="noopener">Open Builder ↗</a>
+    </div>
+    <div id="catalog"></div>
+  </div>
+
+  <!-- Card template -->
+  <template id="card-tpl">
+    <div class="p-col">
+      <article class="card" aria-label="">
+        <div class="media" data-pano>
+          <div class="loader" data-loader>No image</div>
+          <div class="overlay">
+            <div class="line tag">360° PANORAMA</div>
+            <div class="line h" data-text="overlayH">Header</div>
+            <div class="line sub" data-text="overlaySub">VR · XR</div>
+            <div class="line share">
+              <button class="share-btn" aria-label="Share">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="18" fill="currentColor" aria-hidden="true">
+                  <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7a2.5 2.5 0 0 0 0-1.39l7.05-4.11A2.5 2.5 0 1 0 14.5 5a2.5 2.5 0 0 0 0 .22l-7.05 4.11a2.5 2.5 0 1 0 0 5.34l7.05 4.11a2.5 2.5 0 1 0 .5-1.9z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="pager-in" data-pager></div>
+        </div>
+
+        <h2 class="title">
+          <a data-project-link href="#" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:inherit">
+            <span data-text="title1">Title</span> —<br>
+            <span data-text="title2">Action</span>
+          </a>
+        </h2>
+
+        <div class="small small--id">ID: <span data-text="projectId"></span></div>
+
+        <div class="chips" data-chips></div>
+
+        <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i style="width:0%"></i></div>
+
+        <div class="row small stats">
+          <span class="raised" tabindex="0" aria-describedby=""><span data-text="raisedLabel">$0 raised</span></span>
+          <span data-text="progressPct">0%</span>
+          <div class="tooltip" role="tooltip" aria-hidden="true">
+            <div class="tt-h">Raised over last 3 months</div>
+            <svg class="spark" viewBox="0 0 220 80" width="220" height="80" aria-hidden="true">
+              <path class="grid" d="M10 60 H210 M10 35 H210" />
+              <g class="reveal"><path class="area"></path><path class="line"></path></g>
+            </svg>
+            <div class="tt-f"><strong data-text="raisedTotal">$0</strong> total · 3 months</div>
+          </div>
+        </div>
+
+        <div class="small">Naming: <span data-text="naming">0 available of 0</span></div>
+        <div class="small" data-text="location">City, ST</div>
+
+        <div class="small small--org">
+          by <a class="org" href="#" data-text="orgName">Organization</a>
+          <span class="v-wrap" data-verified style="display:none">
+            <button class="v-badge" aria-label="Verified organization">
+              <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path fill="currentColor" d="M20.285 6.709l-11 11-5.657-5.657 1.414-1.414L9.285 14.59l9.586-9.586z"/></svg>
+            </button>
+            <span class="v-tip" role="tooltip"><strong>Verified</strong> — this organization has been reviewed and confirmed by our team.</span>
+          </span>
+        </div>
+
+        <div class="accent" data-text="daysLeft">0 days left</div>
+
+        <div class="tiers">
+          <button class="tier-link" type="button" aria-expanded="false">View naming tiers</button>
+          <div class="tier-menu" role="menu" hidden data-tiers></div>
+        </div>
+      </article>
+    </div>
+  </template>
+
+  <script type="module">
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
+
+    const DEFAULT_PANO = new URL('./img/pano/panorama.jpg', document.baseURI).href;
+    const MAX_PANOS = 12;
+
+    /* -------- utils -------- */
+    const _ru = {'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e','ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'c','ч':'ch','ш':'sh','щ':'sch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya'};
+    const translitRU = s => String(s||'').toLowerCase().replace(/[а-яё]/g,ch=>_ru[ch]??ch);
+    const titleToProductUrl = (title) => {
+      const latin = translitRU(title).normalize('NFKD').replace(/[\u0300-\u036f]/g,'');
+      const slug  = latin.replace(/[^a-z0-9]+/g,'').slice(0,80);
+      return slug ? 'https://ishare.ca/' + slug : '#';
+    };
+    const $  = (s,r=document)=>r.querySelector(s);
+    const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
+    const uid = (p='id') => p + '-' + Math.random().toString(36).slice(2,8);
+    const money = n => '$' + Number(n||0).toLocaleString('en-US');
+
+    function pickExisting(paths){
+      return new Promise(resolve=>{
+        let i=0;(function next(){
+          if(i>=paths.length){ resolve(null); return; }
+          const p=paths[i++], img=new Image(), special=p.startsWith('blob:')||p.startsWith('data:');
+          img.onload=()=>resolve(p); img.onerror=next;
+          img.src = special ? p : p + (p.includes('?')?'&':'?') + 'v=' + Date.now();
+        })();
+      });
+    }
+
+    /* -------- 360 / flat init -------- */
+ function initPanoEl(container, loaderEl, candidates, opts = {}) {
+  if (!container || !loaderEl) return () => {};
+
+  let lon = Number(opts.yaw || 0), lat = Number(opts.pitch || 0);
+  const autoDegPerSec = Number(opts.autoRotate || 0);
+  const allowWheel    = !!opts.wheelZoom;
+
+  // быстрое перетаскивание + инерция
+  const dragSpeed = Number(opts.dragSpeed ?? 0.22);                 // быстрее отклик
+  const inertia   = Math.min(0.99, Math.max(0, Number(opts.inertia ?? 0.90)));
+  const stopEPS   = 0.001;                                          // почти ноль — стоп
+  let velLon = 0, velLat = 0;
+
+  const first = (candidates && candidates[0]) || '';
+  const isSpecial = first.startsWith('blob:') || first.startsWith('data:');
+  const loadPathPromise = isSpecial ? Promise.resolve(first) : pickExisting(candidates);
+
+  return (() => {
+    let cleanup = () => {};
+    loadPathPromise.then((path) => {
+      if (!path) { loaderEl.textContent = 'No image'; return; }
+
+      const probe = new Image();
+      probe.onload = () => {
+        const ratio  = probe.naturalWidth / probe.naturalHeight;
+        const isPano = isFinite(ratio) && ratio > 1.7 && ratio < 2.3;
+
+        if (!isPano) {
+          loaderEl.classList.add('hidden');
+          const img = document.createElement('img');
+          img.className = 'flat';
+          img.alt = 'Image';
+          img.src = path;
+          container.appendChild(img);
+          cleanup = () => { if (img.parentNode) img.remove(); };
+          return;
+        }
+
+        // --- three.js viewer ---
+        let renderer, scene, camera, animId;
+        let isDragging=false, onDownLon=0, onDownLat=0, sx=0, sy=0;
+
+        function resize(){
+          const w=container.clientWidth, h=container.clientHeight;
+          if(!w||!h) return;
+          camera.aspect=w/h; camera.updateProjectionMatrix();
+          renderer.setSize(w,h,false);
+        }
+        function onDown(e){
+          isDragging = true;
+          container.classList.add('dragging');
+          sx=e.clientX; sy=e.clientY; onDownLon=lon; onDownLat=lat;
+          velLon = 0; velLat = 0; // сброс инерции на новый захват
+        }
+        function onMove(e){
+          if(!isDragging) return;
+          const dx=e.clientX - sx, dy=e.clientY - sy;
+          const newLon = onDownLon - dx * dragSpeed;
+          const newLat = Math.max(-85, Math.min(85, onDownLat + dy * dragSpeed));
+          velLon = newLon - lon;
+          velLat = newLat - lat;
+          lon = newLon; lat = newLat;
+        }
+        function onUp(){
+          isDragging=false;
+          container.classList.remove('dragging');
+        }
+        function onWheel(e){
+          if(!allowWheel) return;
+          const f=Math.max(40,Math.min(90,(camera?.fov||75)+e.deltaY*0.03));
+          camera.fov=f; camera.updateProjectionMatrix();
+        }
+        function render(){ renderer.render(scene,camera); }
+        function animate(){
+          animId=requestAnimationFrame(animate);
+
+          if(!isDragging){
+            // инерция
+            lon += velLon; lat += velLat;
+            velLon *= inertia; velLat *= inertia;
+            if (Math.abs(velLon) < stopEPS) velLon = 0;
+            if (Math.abs(velLat) < stopEPS) velLat = 0;
+
+            // границы по вертикали
+            if (lat > 85)  { lat = 85;  velLat = 0; }
+            if (lat < -85) { lat = -85; velLat = 0; }
+
+            // авто-вращение только когда инерция затухла
+            if (autoDegPerSec && velLon === 0 && velLat === 0) {
+              lon += (autoDegPerSec/60);
+            }
+          }
+
+          const phi = THREE.MathUtils.degToRad(90 - lat);
+          const theta = THREE.MathUtils.degToRad(lon);
+          camera.lookAt(new THREE.Vector3(
+            500*Math.sin(phi)*Math.cos(theta),
+            500*Math.cos(phi),
+            500*Math.sin(phi)*Math.sin(theta)
+          ));
+          render();
+        }
+
+        scene  = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(120, 1, 0.1, 1100);
+        const geo = new THREE.SphereGeometry(500, 60, 40); geo.scale(-1,1,1);
+        const mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const mesh= new THREE.Mesh(geo, mat);
+        scene.add(mesh);
+
+        renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.5));
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        container.appendChild(renderer.domElement);
+
+        new THREE.TextureLoader().load(path, (tex)=>{
+          tex.colorSpace = THREE.SRGBColorSpace;
+          tex.minFilter  = THREE.LinearFilter;
+          mat.map = tex; mat.needsUpdate = true;
+          loaderEl.classList.add('hidden');
+          render();
+        }, undefined, ()=>{ loaderEl.textContent = 'Failed to load pano'; });
+
+        resize(); const ro=new ResizeObserver(resize); ro.observe(container);
+        container.addEventListener('pointerdown', onDown);
+        container.addEventListener('pointermove',  onMove);
+        container.addEventListener('pointerup',    onUp);
+        container.addEventListener('pointerleave', onUp);
+        container.addEventListener('wheel', onWheel, {passive:true});
+
+        const vis = () => { if(document.hidden) cancelAnimationFrame(animId); else animate(); };
+        document.addEventListener('visibilitychange', vis);
+        animate();
+
+        cleanup = () => {
+          cancelAnimationFrame(animId);
+          document.removeEventListener('visibilitychange', vis);
+          ro.disconnect();
+          container.replaceChildren();
+          try{ renderer?.dispose?.(); geo.dispose(); mat.dispose(); }catch{}
+        };
+      };
+
+      probe.onerror = () => { loaderEl.textContent = 'Failed to load image'; };
+      probe.src = isSpecial ? path : path + (path.includes('?')?'&':'?') + 'v=' + Date.now();
+    });
+
+    return () => cleanup();
+  })();
+}
+
+
+    /* -------- card render helpers -------- */
+    function fillTexts(root, data){
+      $$('[data-text]',root).forEach(n=>{
+        const k=n.dataset.text;
+        if(k==='orgName'){
+          n.textContent=data.orgName||'';
+          n.setAttribute('href', data.orgUrl||'#');
+          n.target='_blank'; n.rel='noopener noreferrer';
+        } else {
+          n.textContent = data[k] ?? '';
+        }
+      });
+    }
+    function renderChips(root, chips){
+      const host=root.querySelector('[data-chips]');
+      host.innerHTML='';
+      (chips||[]).forEach(ch=>{
+        const [textRaw, tip] = String(ch).split('::');
+        const text=(textRaw||'').trim();
+        let cls='chip';
+        if (/^health care$/i.test(text)) cls='chip health';
+        else if (/^tax-deductible$/i.test(text)) cls='chip tax';
+        else if (/×\s*matching/i.test(text)) cls='chip match';
+        else if (/^ai agent/i.test(text)) cls='chip ai';
+
+        const el=document.createElement('span');
+        if(tip && tip.trim()){
+          const tipId=uid('tip');
+          el.className=cls+' tip-wrap'; el.tabIndex=0;
+          el.setAttribute('aria-describedby', tipId);
+          el.innerHTML=`${text}<span class="tip" id="${tipId}" role="tooltip">${tip.trim()}</span>`;
+        } else { el.className=cls; el.textContent=text; }
+        host.appendChild(el);
+      });
+    }
+    function renderProgress(root,pct,raised,months){
+      months=Math.max(2,Math.min(24,parseInt(months||3)));
+      const bar=root.querySelector('.bar'), fill=bar.querySelector('i'), stats=root.querySelector('.row.small.stats');
+      bar.setAttribute('aria-valuenow',pct); fill.style.width=pct+'%';
+      stats.querySelector('[data-text="raisedLabel"]').textContent = `${money(raised)} raised`;
+      stats.querySelector('[data-text="progressPct"]').textContent  = `${pct}%`;
+      stats.querySelector('[data-text="raisedTotal"]').textContent  = money(raised);
+
+      const tip=stats.querySelector('.tooltip'), raisedEl=stats.querySelector('.raised'), tipId=uid('tt');
+      tip.id=tipId; raisedEl.setAttribute('aria-describedby', tipId);
+
+      const monthsText=`${months} ${months===1?'month':'months'}`;
+      const h=tip.querySelector('.tt-h'); if(h) h.textContent=`Raised over last ${monthsText}`;
+      const f=tip.querySelector('.tt-f'); if(f) f.innerHTML=`<strong data-text="raisedTotal">${money(raised)}</strong> total · ${monthsText}`;
+
+      ['mouseenter','focus'].forEach(ev=>raisedEl.addEventListener(ev, ()=>tip.classList.add('open')));
+      ['mouseleave','blur' ].forEach(ev=>raisedEl.addEventListener(ev, ()=>tip.classList.remove('open')));
+
+      function build(vals,w=220,h=80,pad=10){
+        const mx=Math.max(...vals,1), iw=w-pad*2, ih=h-pad*2, step=iw/(vals.length-1);
+        let d=''; vals.forEach((v,i)=>{ const x=pad+i*step, y=h-pad-(v/mx)*ih; d+=(i?'L':'M')+x+','+y; });
+        return {line:d, area:`${d} L ${pad+iw},${h-pad} L ${pad},${h-pad} Z`};
+      }
+      function setup(tooltipEl,values){
+        const svg=tooltipEl.querySelector('svg.spark');
+        const line=svg.querySelector('path.line');
+        const area=svg.querySelector('path.area');
+        const {line:dl, area:da}=build(values);
+        line.setAttribute('d',dl); area.setAttribute('d',da);
+        const len=line.getTotalLength();
+        line.style.setProperty('--len', String(len));
+        line.classList.add('animate-stroke'); area.classList.add('animate-fill');
+      }
+      const points=months;
+      const series=Array.from({length:points},(_,i)=>Math.round((i+1)*(raised/points)*(0.7+Math.random()*0.6)));
+      setup(root.querySelector('.tooltip'), series);
+    }
+    function renderTiers(root, lines){
+      const host=root.querySelector('[data-tiers]'); host.innerHTML='';
+      (lines||[]).forEach(line=>{
+        const [l,r]=(String(line||'').split('|').map(s=>(s||'').trim()));
+        const row=document.createElement('div'); row.className='tier-row';
+        const left=document.createElement('span'); const right=document.createElement('span');
+        left.textContent=l; right.textContent=r; row.append(left,right); host.appendChild(row);
+      });
+    }
+    const renderVerified = (root,on)=>{ root.querySelector('[data-verified]').style.display = on ? 'inline-block' : 'none'; };
+    function wireShare(root){
+      const b=root.querySelector('.share-btn'); if(!b) return;
+      b.addEventListener('click', async e=>{
+        e.preventDefault();
+        const title=root.querySelector('.title')?.textContent?.trim()||'Project';
+        const url=location.href;
+        if(navigator.share){ try{await navigator.share({title,url});}catch{} }
+        else { await navigator.clipboard.writeText(url); b.title='Link copied'; setTimeout(()=>b.title='',1500); }
+      });
+    }
+    function wireTiers(root){
+      const btn=root.querySelector('.tier-link'), menu=root.querySelector('.tier-menu');
+      if(!btn||!menu) return;
+      btn.addEventListener('click', e=>{
+        const open=menu.hasAttribute('hidden');
+        menu.toggleAttribute('hidden');
+        btn.setAttribute('aria-expanded', open?'true':'false');
+        e.preventDefault(); e.stopPropagation();
+      });
+    }
+
+    function renderPager(root, total, onPick, activeIndex=0){
+      const host=root.querySelector('[data-pager]'); if(!host) return;
+      host.innerHTML='';
+      if(total<2){ host.style.display='none'; return; }
+      host.style.display='flex';
+      for(let i=0;i<total;i++){
+        const btn=document.createElement('button');
+        btn.type='button'; btn.className='dot';
+        btn.setAttribute('aria-label', `Show image ${i+1}`);
+        if(i===activeIndex) btn.setAttribute('aria-current','true');
+        btn.addEventListener('click', e=>{
+          e.preventDefault();
+          if(i===activeIndex) return;
+          onPick(i);
+          host.querySelectorAll('.dot').forEach(d=>d.removeAttribute('aria-current'));
+          btn.setAttribute('aria-current','true');
+        });
+        host.appendChild(btn);
+      }
+    }
+
+    function buildCard(data){
+      const frag = document.getElementById('card-tpl').content.cloneNode(true);
+      const card = frag.querySelector('.card');
+      card.setAttribute('aria-label', `${data.title1} — ${data.title2}`);
+
+      const link = frag.querySelector('[data-project-link]');
+      if(link){
+        const url = titleToProductUrl(data.title1 || '');
+        if(url && url !== '#'){ link.href = url; link.setAttribute('aria-label', `Open ${data.title1}`); }
+      }
+
+      fillTexts(frag, {
+        ...data,
+        raisedLabel:`${money(data.raised)} raised`,
+        progressPct:`${data.progress}%`,
+        raisedTotal:money(data.raised),
+        daysLeft:`${data.daysLeft} days left`
+      });
+
+      renderChips(frag, data.chips);
+      renderProgress(frag, data.progress||0, data.raised||0, data.monthsOnGraph||data.raisedMonths||3);
+      renderTiers(frag, data.tiers||[]);
+      renderVerified(frag, !!data.verified);
+      wireShare(frag); wireTiers(frag);
+
+      const pane   = frag.querySelector('[data-pano]');
+      const loader = frag.querySelector('[data-loader]');
+
+      let list = [];
+      let active = Math.max(0, parseInt(data.activePanoIndex||0));
+      if (Array.isArray(data.panoList) && data.panoList.length){
+        active = Math.min(active, data.panoList.length-1);
+        list = data.panoList.slice(0, MAX_PANOS);
+      } else {
+        list = [ data.panoSrc || DEFAULT_PANO ];
+        active = 0;
+      }
+
+      let cleanup = null;
+      const reinit = (idx) => {
+        if(typeof cleanup==='function'){ try{ cleanup(); }catch{} cleanup=null; }
+        const cur = list[idx] ?? list[0];
+        const rest = list.filter((_,i)=>i!==idx);
+        cleanup = initPanoEl(pane, loader, [cur, ...rest], {
+          yaw:data.yaw,
+  pitch:data.pitch,
+  autoRotate:data.autoRotate,
+  wheelZoom:data.wheelZoom,
+  // новые опции управления (если их нет в данных — возьмутся дефолты)
+  dragSpeed: data.dragSpeed ?? 0.22,
+  inertia:   data.inertia   ?? 0.90
+ });
+      };
+
+      reinit(active);
+      renderPager(frag, list.length, (i)=>reinit(i), active);
+
+      return frag;
+    }
+
+// детерминированный seed для стабильности джиттера между рендерами
+function getSeed(){
+  let s = localStorage.getItem('catalogSeed');
+  if(!s){ s = String(Math.floor(Math.random()*1e9)); localStorage.setItem('catalogSeed', s); }
+  return Number(s);
+}
+// простейший детерминированный "рандом"
+function rand01(i, seed){ 
+  const x = Math.sin(i*9283.71 + seed*0.000113) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+// главный расчёт стартовых высот колонок
+function initialHeights(cols, colW, seed){
+  // амплитуда смещения (подкрутить под вкус)
+  const A = colW * 0.5;           // ≈ половина ширины колонки
+  const J = colW * 0.12;          // джиттер на "jitter" (12% ширины)
+  const arr = new Array(cols).fill(0);
+
+  switch (SHIFT_MODE) {
+    case 'altHalf':   // чёт/нечёт: 0, ½, 0, ½, …
+      return arr.map((_, c) => (c % 2) ? A : 0);
+
+    case 'stair3':    // лесенка из 3 ступеней: 0, ⅓, ⅔, 0, ⅓, ⅔, …
+      return arr.map((_, c) => (c % 3) * (colW/3));
+
+    case 'stair4':    // лесенка из 4 ступеней
+      return arr.map((_, c) => (c % 4) * (colW/4));
+
+    case 'wave': {    // синусоида: плавно и живо
+      // волна по кругу колонок (одна полная волна)
+      return arr.map((_, c) => {
+        const t = (c / Math.max(1, cols-1)) * Math.PI; // полуволна (более мягко)
+        return (0.5 + 0.5*Math.sin(t)) * A;           // [0..A]
+      });
+    }
+
+    case 'center': {  // «чаша»: выше к центру, ниже к краям
+      const mid = (cols - 1) / 2;
+      return arr.map((_, c) => {
+        const d = Math.abs(c - mid) / Math.max(1, mid); // 0 в центре → 1 на краях
+        return (1 - d) * A;                              // максимум по центру
+      });
+    }
+
+    case 'jitter':    // чередование 0/½ + лёгкий детерминированный шум
+      return arr.map((_, c) => ((c % 2) ? A : 0) + (rand01(c, seed)-0.5)*2*J);
+
+    case 'random':    // полностью детерминированный «рандом»
+      return arr.map((_, c) => rand01(c, seed) * A);
+
+    default:
+      return arr;     // без смещения
+  }
+}
+
+
+
+    /* --------- Masonry layout (6/3/1 + смещение на 1/3) --------- */
+    const SHIFT_MODE = 'altHalf'; 
+// варианты: 'altHalf' | 'stair3' | 'stair4' | 'wave' | 'center' | 'jitter' | 'random'
+
+    const host = document.getElementById('catalog');
+    const GAP = 10; // расстояние между колонками и вертикальный зазор
+
+    const getCols = () => {
+      const w = host.clientWidth || window.innerWidth;
+      if (w < 768) return 1;        // mobile
+      if (w < 1200) return 3;       // tablet
+      return 6;                     // notebook/desktop
+    };
+
+    let itemRO; // ResizeObserver для элементов
+    function layout(){
+      const items = Array.from(host.children);
+      if (!items.length) { host.style.height = '0px'; return; }
+
+      const cols = getCols();
+      const w = host.clientWidth;
+      const colW = Math.floor((w - GAP * (cols - 1)) / cols);
+
+      // было (⅓ и цикл из 3-х):
+// const baseShift = (cols >= 3) ? (colW / 3) : 0;
+// const heights = new Array(cols).fill(0).map((_,c)=> (c % 3) * baseShift);
+
+// стало (½ и чередование 0 / ½):
+const seed = getSeed();
+const heights = initialHeights(cols, colW, seed);
+
+
+      // подготовить элементы: ширина, видимость
+      items.forEach(el => {
+        el.style.width = colW + 'px';
+        el.style.visibility = 'hidden';
+      });
+
+      // раскладка по «самой низкой колонке»
+      items.forEach(el => {
+        // выбрать самую низкую колонку
+        let c = 0; let minH = heights[0];
+        for (let i=1;i<cols;i++) if (heights[i] < minH){ minH = heights[i]; c = i; }
+
+        const x = c * (colW + GAP);
+        const y = heights[c];
+
+        el.style.transform = `translate(${x}px, ${y}px)`;
+        el.style.visibility = 'visible';
+
+        // после установки ширины читаем реальную высоту
+        const h = el.offsetHeight;
+        heights[c] = y + h + GAP;
+      });
+
+      host.style.height = Math.max(...heights) + 'px';
+    }
+
+    function watchItems(){
+      if (itemRO) itemRO.disconnect();
+      itemRO = new ResizeObserver(()=>layout());
+      Array.from(host.children).forEach(el=>itemRO.observe(el));
+    }
+
+    window.addEventListener('resize', layout);
+    if (document.fonts?.ready) document.fonts.ready.then(layout);
+
+    /* --------- render catalog from localStorage --------- */
+    const items = (() => {
+      try { return JSON.parse(localStorage.getItem('catalogItems') || '[]'); }
+      catch { return []; }
+    })();
+
+    if (items.length){
+      const df = document.createDocumentFragment();
+      items.forEach(item => df.appendChild(buildCard(item)));
+      host.appendChild(df);
+      // небольшой кадр, чтобы DOM дорисовался
+      requestAnimationFrame(()=>{ watchItems(); layout(); });
+      // на всякий случай пересчитать ещё через тик
+      setTimeout(layout, 200);
+    }
+  </script>
+</body>
+</html>
