@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -8,9 +8,9 @@
   :root{ --radius:16px; --muted:#6b7280; --border:#e5e7eb; --primary:#635bff; }
   html,body{margin:0;padding:0;background:#fff;color:#111827;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial}
 
-  /* 2-column */
-.layout{display:grid;grid-template-columns:minmax(320px,560px) minmax(300px,520px);gap:24px;align-items:start;padding:16px}
-@media (max-width:900px){.layout{grid-template-columns:1fr}}
+
+
+
 
 
   /* Builder (form) */
@@ -25,6 +25,59 @@
   .btn{background:var(--primary);color:#fff;border:0;padding:8px 12px;border-radius:8px;cursor:pointer}
   .btn.secondary{background:#111827}
   .note{font-size:12px;color:var(--muted)}
+
+  /* не растягивать чекбоксы и убрать рамку/паддинги от общего правила */
+.builder input[type="checkbox"]{
+  width:auto;
+  height:auto;
+  padding:0;
+  border:0;
+  border-radius:0;
+}
+
+/* выравнивание лейбл + подсказка + чекбокс в один ряд */
+.inline-control{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:10px;
+  flex-wrap:nowrap;
+}
+.inline-control .label-line{
+  margin:0;
+  flex:1 1 auto;
+  min-width:0;
+}
+.inline-control input[type="checkbox"]{
+  flex:0 0 auto;
+  width:18px;   /* под увеличить кликабельность */
+  height:18px;
+}
+
+
+  .actions{ display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; align-items:center; }
+.actions .btn{ flex:0 0 auto; }
+
+/* optional: mini button style (e.g., for "New ID") */
+.btn--mini{ padding:4px 8px; font-size:12px; }
+
+/* mobile-friendly sticky actions inside the .builder column */
+@media (max-width: 900px){
+  .actions{
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    padding: 12px 0;
+    background: #fff;
+    border-top: 1px solid var(--border);
+    z-index: 5;
+  }
+  /* make the primary button expand, keep the rest compact */
+  #launch.btn{ flex: 1 1 auto; }
+  .actions .btn.secondary{ flex: 0 0 auto; }
+}
+
 
   /* Dropzone */
 /* --- Upload section (polished) --- */
@@ -185,7 +238,7 @@ body { overflow: hidden; }
 /* сетка: страницы ровно пополам по ширине и на всю высоту */
 .layout{
   display:grid;
-  grid-template-columns: 1fr 1fr;      /* половина на половину */
+  grid-template-columns: 0.5fr 1.5fr;      /* половина на половину */
   gap:24px;
   align-items:start;
   padding:16px 24px;
@@ -330,6 +383,171 @@ body { overflow: hidden; }
 /* ровняем чекбокс по центру строки */
 .chk{ display:flex; align-items:center; gap:8px; }
 
+/* Inline checkbox aligned with label + tooltip */
+.inline-control{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:10px;
+}
+.inline-control .label-line{
+  margin:0;
+  flex:1 1 auto;           /* текст/tooltip тянутся */
+  min-width:0;
+}
+.inline-control input[type="checkbox"]{
+  margin:0;
+  width:18px;
+  height:18px;
+  flex:0 0 auto;           /* чекбокс справа */
+}
+
+.chk-line{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:10px;
+}
+
+.inline-control{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:10px;
+}
+
+
+.inline-control{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}
+.inline-control .label-line{margin:0;flex:1 1 auto;min-width:0}
+.inline-control input[type="checkbox"]{margin:0;width:18px;height:18px;flex:0 0 auto}
+
+
+/* inline checkbox: [□] Label  (i) */
+.inline-check{
+  display:flex;
+  align-items:center;
+  gap:8px;            /* расстояние между чекбоксом, лейблом и (i) */
+  margin-top:10px;
+}
+.inline-check input[type="checkbox"]{ margin:0; width:18px; height:18px; }
+.inline-check label{ margin:0; font-size:12px; color:var(--muted); }
+.inline-check .form-help{ margin-left:2px; }  /* иконка "i" сразу после лейбла */
+
+/* Title link: animated underline + focus ring */
+.title a[data-project-link]{
+  position:relative;
+  display:inline-block;
+  text-decoration:none;
+  color:inherit;
+  border-radius:8px;                /* для красивого focus ring */
+  transition:transform .2s ease;
+}
+.title a[data-project-link]::after{
+  content:"";
+  position:absolute;
+  left:0; right:0; bottom:-2px;
+  height:2px;
+  background:linear-gradient(90deg,var(--primary),#a78bfa);
+  transform:scaleX(0);
+  transform-origin:left;
+  opacity:.0;
+  transition:transform .35s cubic-bezier(.2,.8,.2,1), opacity .2s ease;
+}
+.title a[data-project-link]:hover::after,
+.title a[data-project-link]:focus-visible::after{
+  transform:scaleX(1);
+  opacity:1;
+}
+.title a[data-project-link]:hover{
+  transform:translateY(-1px);
+}
+.title a[data-project-link]:focus-visible{
+  outline:none;
+  box-shadow:0 0 0 3px rgba(99,91,255,.28);
+}
+
+/* --- Thumbnails gallery under dropzone --- */
+.dz-gallery{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap:8px;
+  margin-top:8px;
+}
+
+.thumb{
+  position:relative;
+  aspect-ratio:1/1;
+  border:1px solid var(--border);
+  border-radius:8px;
+  overflow:hidden;
+  background:#f3f4f6;
+}
+.thumb img{
+  width:100%; height:100%; object-fit:cover; display:block;
+}
+.thumb .remove{
+  position:absolute; top:4px; right:4px;
+  width:22px; height:22px; border:0; border-radius:50%;
+  background:#111827; color:#fff; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; line-height:1;
+}
+.thumb .badge{
+  position:absolute; left:4px; bottom:4px;
+  font-size:10px; background:#fff; border:1px solid var(--border);
+  border-radius:6px; padding:2px 6px;
+}
+.thumb.active{ outline:2px solid var(--primary); outline-offset:2px; }
+.dz-name{ grid-column:1 / -1; font-size:12px; color:#374151; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+
+/* Dots INSIDE the image */
+.pager-in{
+  position:absolute;
+  left:0; right:0; bottom:10px;
+  display:flex; justify-content:center; gap:6px;
+  z-index:3;                 /* выше .overlay (у неё z-index:2) */
+  pointer-events:auto;       /* кликаются */
+}
+
+/* чистая круглая точка, очень маленькая */
+.pager-in .dot{
+  width:6px; height:6px;
+  border-radius:50%;
+  padding:0;                 /* иначе превращается в «овал» */
+  border:1.25px solid hsla(0,0%,100%,.95);
+  background:transparent;
+  opacity:.9;
+  cursor:pointer;
+  display:inline-block;
+  position:relative;         /* для hit-area */
+  appearance:none; -webkit-appearance:none;
+  transition:transform .12s ease, opacity .12s ease;
+}
+
+/* увеличить невидимую зону клика, сама точка остаётся маленькой */
+.pager-in .dot::after{
+  content:"";
+  position:absolute; inset:-6px;
+}
+
+/* активная точка — заливка белым */
+.pager-in .dot[aria-current="true"]{
+  background:#fff;
+  border-color:#fff;
+}
+
+/* фокус/hover — чуть-чуть, без анимаций */
+.pager-in .dot:hover{ transform:scale(1.15); }
+.pager-in .dot:focus-visible{
+  outline:0;
+  box-shadow:0 0 0 3px rgba(255,255,255,.35);
+}
+
+
+
 
 
 </style>
@@ -350,10 +568,13 @@ body { overflow: hidden; }
   <span class="form-help" tabindex="0" aria-describedby="tip-title1">
     <span class="ico" aria-hidden="true">i</span>
     <span class="form-tip" id="tip-title1" role="tooltip">
-      Main part of the project title (before ‘—’). Keep it short, e.g. ‘Queensway Carleton Hospital’.
-      The part after the dash goes into the ‘Action’ field below. Changes appear in real time in the
-      preview on the right.
-    </span>
+  Main part of the project title (before ‘—’). This value also generates the public
+  <em>project page URL</em>, and the card’s title becomes a clickable link.
+  Example: “Queensway Carleton Hospital” → <code>ishare.ca/queenswaycarletonhospital</code>.
+  Keep it short. The part after the dash goes into the “Action” field below.
+  Changes appear in real time in the preview on the right.
+</span>
+
   </span>
 </div>
 
@@ -386,8 +607,30 @@ body { overflow: hidden; }
        value="Dedicate a Unit">
 
 
-    <label>Overlay header</label><input name="overlayH" value="Inside the hospital wing">
-    <label>Overlay sub</label><input name="overlaySub" value="VR · XR">
+    <div class="label-line">
+  <label for="overlayH">Overlay header</label>
+  <span class="form-help" tabindex="0" aria-describedby="tip-overlayH">
+    <span class="ico" aria-hidden="true">i</span>
+    <span class="form-tip" id="tip-overlayH" role="tooltip">
+      Short headline shown on the image (bottom of the card). Appears on hover.
+      Keep it to 3–6 words, no period. Example: “Inside the hospital wing”.
+    </span>
+  </span>
+</div>
+<input id="overlayH" name="overlayH" class="input-subdued" value="Inside the hospital wing">
+
+<div class="label-line">
+  <label for="overlaySub">Overlay sub</label>
+  <span class="form-help" tabindex="0" aria-describedby="tip-overlaySub">
+    <span class="ico" aria-hidden="true">i</span>
+    <span class="form-tip" id="tip-overlaySub" role="tooltip">
+      Small line under the header — usually tags like “VR · XR” or “360° · Walkthrough”.
+      Keep it concise, around 25–30 characters.
+    </span>
+  </span>
+</div>
+<input id="overlaySub" name="overlaySub" class="input-subdued" value="VR · XR">
+
 
    <div class="label-line">
   <label for="panoFile">Panorama / photo</label>
@@ -400,50 +643,116 @@ body { overflow: hidden; }
   </span>
 </div>
 
-<div id="panoDrop" class="dropzone" tabindex="0" aria-label="Upload panorama">
-  <input type="hidden" name="panoSrc" value="img/pano/panorama.jpg">
-  <span class="dz-text">Drag your panorama here or click</span>
-  <input id="panoFile" type="file" accept=".jpg,.jpeg,.png,.webp,image/*" hidden>
-  <label for="panoFile" class="dz-btn">Choose file</label>
+<div id="panoDrop" class="dropzone" tabindex="0" aria-label="Upload panorama(s)">
+  
+  <span class="dz-text">Drag your panoramas here or click</span>
+
+  <!-- ВАЖНО: multiple -->
+  <input id="panoFile" type="file" accept=".jpg,.jpeg,.png,.webp,image/*" multiple hidden>
+
+  <label for="panoFile" class="dz-btn">Choose files</label>
   <span id="panoFileName" class="dz-name"></span>
+</div>
+
+<!-- НОВОЕ: превью загруженных панорам с крестиками -->
+<div id="panoGallery" class="dz-gallery" aria-live="polite"></div>
+
+
+
+
+
+
+
+
+
+
+
+    <div class="label-line">
+  <label for="sector">Sector</label>
+  <span class="form-help" tabindex="0" aria-describedby="tip-sector">
+    <span class="ico" aria-hidden="true">i</span>
+    <span class="form-tip" id="tip-sector" role="tooltip">
+      Choose the project’s category. This becomes the first chip on the card
+      and helps donors quickly understand the cause. Changes update the preview in real time.
+    </span>
+  </span>
+</div>
+
+<select id="sector" name="sector">
+  <option>Health Care</option>
+  <option>Education</option>
+  <option>Culture</option>
+  <option>Community</option>
+  <option>Disaster Relief</option>
+  <option>Faith</option>
+  <option>International Aid</option>
+  <option>Tourism</option>
+</select>
+
+
+    <div class="chk-line">
+  <label for="tax" class="row-inline" style="margin:0">
+    <input id="tax" type="checkbox" name="tax" checked aria-describedby="tip-tax">
+    Tax-deductible
+  </label>
+
+  <!-- info icon (не меняет состояние чекбокса) -->
+  <span class="form-help" tabindex="0" aria-describedby="tip-tax" onclick="event.stopPropagation()">
+    <span class="ico" aria-hidden="true">i</span>
+    <span class="form-tip" id="tip-tax" role="tooltip">
+      If enabled, the card shows a “Tax-deductible” chip. Donations may be
+      eligible for an official tax receipt (subject to local regulations).
+    </span>
+  </span>
+</div>
+
+
+    <div class="label-line">
+  <label for="matching">Matching</label>
+  <span class="form-help" tabindex="0" aria-describedby="tip-matching">
+    <span class="ico" aria-hidden="true">i</span>
+    <span class="form-tip" id="tip-matching" role="tooltip">
+      Select the sponsor match multiplier. For example, 2× means every $1 donated is doubled by the sponsor (up to the campaign’s cap or deadline).
+    </span>
+  </span>
+</div>
+<select id="matching" name="matching">
+  <option value="none">No matching</option>
+  <option value="1.5">1.5× matching</option>
+  <option value="2" selected>2× matching</option>
+  <option value="3">3× matching</option>
+</select>
+
+<!-- helper chip — как у AI Agent -->
+<div class="chk-line">
+  <label for="matchHelper" class="row-inline" style="margin:0">
+    <input id="matchHelper" type="checkbox" name="matchHelper" checked aria-describedby="tip-matchhelper">
+    Show helper chip “sponsor adds $X”
+  </label>
+  <span class="form-help" tabindex="0" aria-describedby="tip-matchhelper" onclick="event.stopPropagation()">
+    <span class="ico" aria-hidden="true">i</span>
+    <span class="form-tip" id="tip-matchhelper" role="tooltip">
+      Adds a chip that spells out the extra $ the sponsor contributes per $1 given (e.g., $1 for 2×, $2 for 3×).
+    </span>
+  </span>
 </div>
 
 
 
+<!-- AI Agent -->
+<div class="chk-line">
+  <label for="aiAgent" class="row-inline" style="margin:0">
+    <input id="aiAgent" type="checkbox" name="aiAgent" checked aria-describedby="tip-ai">
+    AI Agent · 24/7
+  </label>
+  <span class="form-help" tabindex="0" aria-describedby="tip-ai" onclick="event.stopPropagation()">
+    <span class="ico" aria-hidden="true">i</span>
+    <span class="form-tip" id="tip-ai" role="tooltip">
+      Always-on assistant that answers donor questions and guides giving 24/7.
+    </span>
+  </span>
+</div>
 
-
-
-
-
-
-
-    <label>Sector</label>
-    <select name="sector">
-      <option>Health Care</option>
-      <option>Education</option>
-      <option>Culture</option>
-      <option>Community</option>
-      <option>Disaster Relief</option>
-      <option>Faith</option>
-      <option>International Aid</option>
-      <option>Tourism</option>
-    </select>
-    <div class="note">This is the first chip that indicates the project’s sector.</div>
-
-    <label class="row-inline"><input type="checkbox" name="tax" checked> Tax-deductible</label>
-
-    <label>Matching</label>
-    <select name="matching">
-      <option value="none">No matching</option>
-      <option value="1.5">1.5× matching</option>
-      <option value="2" selected>2× matching</option>
-      <option value="3">3× matching</option>
-    </select>
-    <label class="row-inline"><input type="checkbox" name="matchHelper" checked> Show helper chip “sponsor adds $X”</label>
-<label class="row-inline">
-  <input type="checkbox" name="aiAgent" checked>
-  AI Agent · 24/7
-</label>
 
     <div class="grid-3">
   <!-- Progress % -->
@@ -472,6 +781,20 @@ body { overflow: hidden; }
       </span>
     </div>
     <input id="raised" name="raised" type="number" min="0" step="100" value="87400">
+    <!-- Graph months -->
+<div class="field">
+  <div class="label-line">
+    <label for="raisedMonths">Months on graph</label>
+    <span class="form-help" tabindex="0" aria-describedby="tip-raisedMonths">
+      <span class="ico" aria-hidden="true">i</span>
+      <span class="form-tip" id="tip-raisedMonths" role="tooltip">
+        How many months to display in the tooltip chart (min 2, max 24).
+      </span>
+    </span>
+  </div>
+  <input id="raisedMonths" name="raisedMonths" type="number" min="2" max="24" step="1" value="3">
+</div>
+
   </div>
 
   <!-- Days left -->
@@ -537,40 +860,94 @@ body { overflow: hidden; }
   </div>
 </div>
 
-<div class="label-line">
-  <label for="verified">Verified badge</label>
-  <span class="form-help" tabindex="0" aria-describedby="tip-verified">
+<!-- Verified badge -->
+<div class="chk-line">
+  <label for="verified" class="row-inline" style="margin:0">
+    <input id="verified" type="checkbox" name="verified" checked aria-describedby="tip-verified">
+    Verified badge
+  </label>
+  <span class="form-help" tabindex="0" aria-describedby="tip-verified" onclick="event.stopPropagation()">
     <span class="ico" aria-hidden="true">i</span>
     <span class="form-tip" id="tip-verified" role="tooltip">
       Shows a blue check next to the organization to indicate it was reviewed by our team.
     </span>
   </span>
 </div>
-<label class="chk">
-  <input type="checkbox" id="verified" name="verified" checked>
-  Show verified badge
-</label>
 
 
-    <label>Tiers (one per line: “Label | Right text”)</label>
-    <textarea name="tiers">Operating Room Sponsorship | $25k · 2 left
+
+
+    <div class="label-line">
+  <label for="tiers">Tiers</label>
+  <span class="form-help" tabindex="0" aria-describedby="tip-tiers">
+    <span class="ico" aria-hidden="true">i</span>
+    <span class="form-tip" id="tip-tiers" role="tooltip">
+      Enter one tier per line in the format “Label | Right text”.<br>
+      The part before the bar is the tier name; the part after the bar
+      is shown right-aligned (e.g., price and availability).<br><br>
+      Examples:<br>
+      Operating Room Sponsorship | $25k · 2 left<br>
+      Patient Care Grant | $5k · 15 left
+    </span>
+  </span>
+</div>
+<textarea id="tiers" name="tiers">Operating Room Sponsorship | $25k · 2 left
 Patient Care Grant | $5k · 15 left
 Donor Wall Recognition | $1k · 60 left</textarea>
 
+
     <div class="builder-grid">
-      <label>Start yaw (°)</label><input name="yaw" type="number" value="200">
-      <label>Start pitch (°)</label><input name="pitch" type="number" value="0">
+      <div class="label-line">
+  <label for="yaw">Start yaw (°)</label>
+  <span class="form-help" tabindex="0" aria-describedby="tip-yaw">
+    <span class="ico" aria-hidden="true">i</span>
+    <span class="form-tip" id="tip-yaw" role="tooltip">
+      Horizontal starting angle of the panorama camera. 0° faces the image’s
+      default forward direction; positive values rotate to the right (clockwise).
+      Any number works (0–360 is typical).
+    </span>
+  </span>
+</div>
+<input id="yaw" name="yaw" type="number" value="200">
+
+      <div class="label-line">
+  <label for="pitch">Start pitch (°)</label>
+  <span class="form-help" tabindex="0" aria-describedby="tip-pitch">
+    <span class="ico" aria-hidden="true">i</span>
+    <span class="form-tip" id="tip-pitch" role="tooltip">
+      Vertical starting angle of the panorama camera. 0° is level (horizon);
+      positive values tilt up, negative values tilt down. Typically limited to
+      about −85°…+85° to avoid poles.
+    </span>
+  </span>
+</div>
+<input id="pitch" name="pitch" type="number" value="0">
+
+
+
     </div>
     <label class="row-inline"><input type="checkbox" name="wheelZoom"> Enable wheel zoom</label>
-    <label>Auto-rotate (deg/sec)</label>
-<input name="autoRotate" type="number" min="0" step="0.1" value="1">
+    <div class="label-line">
+  <label for="autoRotate">Auto-rotate (deg/sec)</label>
+  <span class="form-help" tabindex="0" aria-describedby="tip-autorotate">
+    <span class="ico" aria-hidden="true">i</span>
+    <span class="form-tip" id="tip-autorotate" role="tooltip">
+      Speed of automatic rotation in degrees per second. Set to 0 to disable.
+      Rotation pauses while you drag, then resumes. Typical range: 0.5–2.
+    </span>
+  </span>
+</div>
+<input id="autoRotate" name="autoRotate" type="number" min="0" step="0.1" value="1">
+
 
 
     <div class="actions">
-      <button type="button" id="save" class="btn">Save</button>
-      <button type="button" id="load" class="btn secondary">Load last</button>
-      <button type="button" id="copy-html" class="btn secondary">Copy card HTML</button>
-    </div>
+  <button type="button" id="launch" class="btn">Launch campaign</button>
+  <button type="button" id="save" class="btn secondary">Save</button>
+  <button type="button" id="load" class="btn secondary">Load last</button>
+  <button type="button" id="copy-html" class="btn secondary">Copy card HTML</button>
+</div>
+
   </form>
 
   <!-- RIGHT: PREVIEW -->
@@ -596,9 +973,18 @@ Donor Wall Recognition | $1k · 60 left</textarea>
             </button>
           </div>
         </div>
+        <div class="pager-in" data-pager></div>
+
       </div>
 
-      <h2 class="title"><span data-text="title1">Title</span> —<br><span data-text="title2">Action</span></h2>
+      <h2 class="title">
+  <a data-project-link href="#" target="_blank" rel="noopener noreferrer"
+     style="text-decoration:none;color:inherit">
+    <span data-text="title1">Title</span> —<br>
+    <span data-text="title2">Action</span>
+  </a>
+</h2>
+
       <div class="small small--id">ID: <span data-text="projectId"></span></div>
 
 
@@ -648,10 +1034,147 @@ Donor Wall Recognition | $1k · 60 left</textarea>
   import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
 
 
-const DEFAULT_PANO = new URL('img/pano/panorama.jpg', document.baseURI).href;
+const DEFAULT_PANO = new URL('./img/pano/panorama.jpg', document.baseURI).href;
 
 
-  /* Helpers */
+// базовый домен для страниц лотов
+const PROJECT_BASE = 'https://ishare.ca/';
+
+
+const MAX_PANOS = 12;
+let panoList = [];   // будет сохраняться и загружаться вместе с формой
+
+
+
+let activePanoIndex = 0;
+function clampActive(){
+  if (!panoList.length) { activePanoIndex = 0; return; }
+  if (activePanoIndex < 0) activePanoIndex = 0;
+  if (activePanoIndex >= panoList.length) activePanoIndex = panoList.length - 1;
+}
+
+function setPanoHiddenToActive(){
+  ensurePanoHiddenInput();
+  clampActive();
+  const current = getPanoCandidates()[0] || DEFAULT_PANO; // см. п.2 — там активный идёт первым
+  form.querySelectorAll('input[name="panoSrc"]').forEach(el => el.value = current);
+}
+
+
+
+// простая транслитерация кириллицы → латиница (на всякий)
+const _ru = { 'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e','ж':'zh','з':'z','и':'i','й':'y',
+  'к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'h',
+  'ц':'c','ч':'ch','ш':'sh','щ':'sch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya' };
+function translitRU(s){ return String(s||'')
+  .toLowerCase()
+  .replace(/[а-яё]/g, ch => _ru[ch] ?? ch); }
+
+// из Title → slug без пробелов/знаков
+function titleToProductUrl(title){
+  const latin = translitRU(title).normalize('NFKD').replace(/[\u0300-\u036f]/g,'');
+  const slug  = latin.replace(/[^a-z0-9]+/g,'').slice(0,80);
+  return slug ? PROJECT_BASE + slug : '';
+}
+
+
+
+
+
+
+/* Helpers */
+
+// ↓ поставить рядом с другими helpers
+function downscaleToDataURL(src, maxW = 1280, maxH = 1280, quality = 0.82){
+  return new Promise(resolve=>{
+    const im = new Image();
+    im.onload = ()=>{
+      let w = im.naturalWidth || im.width;
+      let h = im.naturalHeight || im.height;
+      // только уменьшаем, не увеличиваем
+      const k = Math.min(maxW / w, maxH / h, 1);
+      const tw = Math.round(w * k), th = Math.round(h * k);
+      const c = document.createElement('canvas'); c.width = tw; c.height = th;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(im, 0, 0, tw, th);
+      // всегда JPEG — сильно экономит
+      resolve(c.toDataURL('image/jpeg', quality));
+    };
+    im.onerror = ()=> resolve(src); // если не смогли — отдаём как есть
+    im.crossOrigin = 'anonymous';   // на случай относительных путей
+    im.src = src;
+  });
+}
+
+
+
+
+function getCatalogItemsSafe(){
+  try { return JSON.parse(localStorage.getItem('catalogItems') || '[]'); }
+  catch { return []; }
+}
+function listExistingIds(){
+  return new Set(getCatalogItemsSafe().map(x => String(x?.projectId ?? '')));
+}
+function mintUniqueId6(){
+  const used = listExistingIds();
+  // пробуем до 1000 раз случайный 6-значный
+  for (let t = 0; t < 1000; t++){
+    const id = String(Math.floor(Math.random() * 1e6)).padStart(6,'0');
+    if (!used.has(id)) return id;
+  }
+  // резерв: последовательный счётчик
+  let seq = parseInt(localStorage.getItem('catalogIdSeq') || '420000', 10);
+  if (!Number.isFinite(seq)) seq = 420000;
+  seq = (seq + 1) % 1000000;
+  localStorage.setItem('catalogIdSeq', String(seq));
+  return String(seq).padStart(6,'0');
+}
+
+
+// ↓↓↓ добавить рядом с другими хелперами
+async function shrinkDataURL(dataUrl, maxW = 1600, quality = 0.8){
+  if (!/^data:image\//.test(dataUrl)) return dataUrl;
+  const img = new Image();
+  const loaded = new Promise((res, rej)=>{ img.onload = res; img.onerror = rej; });
+  img.src = dataUrl;
+  await loaded;
+  const scale = Math.min(1, maxW / (img.naturalWidth || 1));
+  const w = Math.max(1, Math.round((img.naturalWidth || 1) * scale));
+  const h = Math.max(1, Math.round((img.naturalHeight || 1) * scale));
+  const cvs = document.createElement('canvas'); cvs.width = w; cvs.height = h;
+  const ctx = cvs.getContext('2d', { alpha:false });
+  ctx.drawImage(img, 0, 0, w, h);
+  // jpeg даёт кратно меньший размер, прозрачность нам не нужна
+  return cvs.toDataURL('image/jpeg', quality);
+}
+
+// Подготовить галерею к сохранению в каталог (не вылететь по квоте)
+// было: только 4 штуки
+// стало: все до MAX_PANOS, с лёгкой компрессией
+async function prepareGalleryForCatalog({limit = MAX_PANOS, targetW = 1120, targetH = 1120, quality = 0.78} = {}){
+  // исходный список
+  const srcList = (Array.isArray(panoList) && panoList.length)
+    ? panoList.slice(0, limit)
+    : [ form.querySelector('input[name="panoSrc"]')?.value || DEFAULT_PANO ];
+
+  // активную ставим первой
+  clampActive();
+  const list = srcList.slice();
+  const a = Math.min(activePanoIndex, list.length - 1);
+  if (a > 0) [list[0], list[a]] = [list[a], list[0]];
+
+  // компрессия в dataURL (безопасно для localStorage)
+  const compact = [];
+  for (const src of list){
+    compact.push(await downscaleToDataURL(src, targetW, targetH, quality));
+  }
+  return { compact, idx: 0, cover: compact[0] };
+}
+
+
+
+
   const $ = (s, r=document)=>r.querySelector(s);
   const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
   const uid = (p='id') => p + '-' + Math.random().toString(36).slice(2,8);
@@ -674,104 +1197,162 @@ const DEFAULT_PANO = new URL('img/pano/panorama.jpg', document.baseURI).href;
   /* ИНИЦИАЛИЗАЦИЯ ПАНОРАМЫ ПО ЭЛЕМЕНТАМ (ленивая) */
   /* ИНИЦИАЛИЗАЦИЯ МЕДИА: панорама (2:1) → three.js, иначе — плоская картинка */
 function initPanoEl(container, loaderEl, candidates, opts = {}) {
-  if (!container || !loaderEl) return;
+  if (!container || !loaderEl) return () => {};
 
-  // управление
   let lon = Number(opts.yaw || 0), lat = Number(opts.pitch || 0);
   const autoDegPerSec = Number(opts.autoRotate || 0);
-  const allowWheel = !!opts.wheelZoom;
+  const allowWheel    = !!opts.wheelZoom;
 
-  // выбрать реальный путь
+// NEW: faster drag + inertia (damping)
+  const dragSpeed = Number(opts.dragSpeed ?? 0.22);        // было ~0.12, теперь быстрее
+ const inertia   = Math.min(0.99, Math.max(0, Number(opts.inertia ?? 0.90)));
+  const stopEPS   = 0.001;                                 // когда скорость почти 0 — останавливаем
+ let velLon = 0, velLat = 0;                              // «скорость» в градусах/кадр
+
+  
   const first = (candidates && candidates[0]) || '';
   const isSpecial = first.startsWith('blob:') || first.startsWith('data:');
   const loadPathPromise = isSpecial ? Promise.resolve(first) : pickExisting(candidates);
 
-  loadPathPromise.then((path) => {
-    if (!path) { loaderEl.textContent = 'Panorama not found'; return; }
+  return (() => {
+    let cleanup = () => {};
+    loadPathPromise.then((path) => {
+      if (!path) { loaderEl.textContent = 'Panorama not found'; return; }
 
-    // предварительно загружаем как <img>, чтобы понять соотношение сторон
-    const probe = new Image();
-    probe.onload = () => {
-      const ratio = probe.naturalWidth / probe.naturalHeight;
-      const isPano = isFinite(ratio) && ratio > 1.7 && ratio < 2.3; // ~2:1
+      const probe = new Image();
+      probe.onload = () => {
+        const ratio  = probe.naturalWidth / probe.naturalHeight;
+        const isPano = isFinite(ratio) && ratio > 1.7 && ratio < 2.3;
 
-      if (!isPano) {
-        // ФОЛБЭК: обычная картинка без three.js
-        loaderEl.classList.add('hidden');
-        const img = document.createElement('img');
-        img.className = 'flat';
-        img.alt = 'Image';
-        img.src = path;
-        container.appendChild(img);
-        return;
-      }
+        if (!isPano) {
+          loaderEl.classList.add('hidden');
+          const img = document.createElement('img');
+          img.className = 'flat';
+          img.alt = 'Image';
+          img.src = path;
+          container.appendChild(img);
+          cleanup = () => { if (img.parentNode) img.remove(); };
+          return;
+        }
 
-      // PANORAMA (three.js)
-      let renderer, scene, camera, animId;
-      let isDragging = false, onDownLon = 0, onDownLat = 0, startX = 0, startY = 0;
+        // --- three.js ---
+        let renderer, scene, camera, animId;
+        let isDragging = false, onDownLon = 0, onDownLat = 0, startX = 0, startY = 0;
 
-      function resize() {
-        const w = container.clientWidth, h = container.clientHeight;
-        if (!w || !h || !camera || !renderer) return;
-        camera.aspect = w / h; camera.updateProjectionMatrix();
-        renderer.setSize(w, h, false);
-      }
+        function resize(){
+          const w = container.clientWidth, h = container.clientHeight;
+          if (!w || !h || !camera || !renderer) return;
+          camera.aspect = w/h; camera.updateProjectionMatrix();
+          renderer.setSize(w,h,false);
+        }
+        function onPointerDown(e){
+          isDragging = true;
+          container.classList.add('dragging');
+          startX = e.clientX; startY = e.clientY;
+          onDownLon = lon; onDownLat = lat;
+          velLon = 0; velLat = 0;                     // сбрасываем инерцию при новом захвате
+        }
+        function onPointerMove(e){
+          if(!isDragging) return;
+          const dx = e.clientX - startX;
+          const dy = e.clientY - startY;
+          const newLon = onDownLon - dx * dragSpeed;   // быстрее отклик
+          const newLat = Math.max(-85, Math.min(85, onDownLat + dy * dragSpeed));
+          velLon = newLon - lon;                       // накапливаем скорость для «броска»
+          velLat = newLat - lat;
+          lon = newLon; lat = newLat;
+        }
+        function onPointerUp(){ isDragging=false; container.classList.remove('dragging'); }
+        function onWheel(e){ if(!allowWheel) return; const f=Math.max(40,Math.min(90,(camera?.fov||75)+e.deltaY*0.03)); camera.fov=f; camera.updateProjectionMatrix(); }
+        function render(){ renderer.render(scene,camera); }
+        function animate(){
+  animId = requestAnimationFrame(animate);
 
-      function onPointerDown(e){ isDragging=true; container.classList.add('dragging'); startX=e.clientX; startY=e.clientY; onDownLon=lon; onDownLat=lat; }
-      function onPointerMove(e){ if(!isDragging) return; const dx=e.clientX-startX, dy=e.clientY-startY; lon=onDownLon-dx*0.12; lat=Math.max(-85,Math.min(85,onDownLat+dy*0.12)); }
-      function onPointerUp(){ isDragging=false; container.classList.remove('dragging'); }
-      function onWheel(e){ if(!allowWheel) return; const f=Math.max(40,Math.min(90,(camera?.fov||75)+e.deltaY*0.03)); camera.fov=f; camera.updateProjectionMatrix(); }
-      function render(){ renderer.render(scene,camera); }
-      function animate(){
-        animId = requestAnimationFrame(animate);
-        if(!isDragging && autoDegPerSec){ lon += (autoDegPerSec/60); }
-        const phi = THREE.MathUtils.degToRad(90 - lat);
-        const theta = THREE.MathUtils.degToRad(lon);
-        camera.lookAt(new THREE.Vector3(
-          500*Math.sin(phi)*Math.cos(theta),
-          500*Math.cos(phi),
-          500*Math.sin(phi)*Math.sin(theta)
-        ));
-        render();
-      }
+  if(!isDragging){
+    if (autoDegPerSec){ lon += (autoDegPerSec/60); } // авто-вращение, если задано
+    // инерция
+    lon += velLon; lat += velLat;
+    velLon *= inertia; velLat *= inertia;
+    if (Math.abs(velLon) < stopEPS) velLon = 0;
+    if (Math.abs(velLat) < stopEPS) velLat = 0;
+    if (lat > 85) { lat = 85; velLat = 0; }
+    if (lat < -85){ lat = -85; velLat = 0; }
+  }
 
-      // сцена
-      scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1100);
-      const geo = new THREE.SphereGeometry(500, 60, 40); geo.scale(-1,1,1);
-      const mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-      scene.add(new THREE.Mesh(geo, mat));
-
-      renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.5));
-      renderer.outputColorSpace = THREE.SRGBColorSpace;
-      container.appendChild(renderer.domElement);
-
-      // текстура
-      new THREE.TextureLoader().load(path, (tex)=>{
-        tex.colorSpace = THREE.SRGBColorSpace;
-        tex.minFilter  = THREE.LinearFilter;
-        mat.map = tex; mat.needsUpdate = true;
-        loaderEl.classList.add('hidden');
-        render();
-      }, undefined, ()=>{ loaderEl.textContent='Failed to load pano'; });
-
-      // события
-      resize(); new ResizeObserver(resize).observe(container);
-      container.addEventListener('pointerdown', onPointerDown);
-      container.addEventListener('pointermove',  onPointerMove);
-      container.addEventListener('pointerup',    onPointerUp);
-      container.addEventListener('pointerleave', onPointerUp);
-      container.addEventListener('wheel', onWheel, {passive:true});
-      document.addEventListener('visibilitychange', ()=>{ if(document.hidden) cancelAnimationFrame(animId); else animate(); });
-
-      animate();
-    };
-    probe.onerror = () => { loaderEl.textContent = 'Failed to load image'; };
-    // кэш-брейкер для не data:/blob:
-    probe.src = isSpecial ? path : path + (path.includes('?')?'&':'?') + 'v=' + Date.now();
-  });
+  const phi = THREE.MathUtils.degToRad(90 - lat);
+  const theta = THREE.MathUtils.degToRad(lon);
+  camera.lookAt(new THREE.Vector3(
+    500*Math.sin(phi)*Math.cos(theta),
+    500*Math.cos(phi),
+    500*Math.sin(phi)*Math.sin(theta)
+  ));
+  render();
 }
+
+
+        scene  = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(120, 1, 0.1, 1100);
+        const geo = new THREE.SphereGeometry(500, 60, 40); geo.scale(-1,1,1);
+        const mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const mesh = new THREE.Mesh(geo, mat);
+        scene.add(mesh);
+
+        renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.5));
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        container.appendChild(renderer.domElement);
+
+        let texRef = null;
+        new THREE.TextureLoader().load(path, (tex)=>{
+          tex.colorSpace = THREE.SRGBColorSpace;
+          tex.minFilter  = THREE.LinearFilter;
+          texRef = tex;
+          mat.map = tex; mat.needsUpdate = true;
+          loaderEl.classList.add('hidden');
+          render();
+        }, undefined, ()=>{ loaderEl.textContent = 'Failed to load pano'; });
+
+        resize();
+        const ro = new ResizeObserver(resize);
+        ro.observe(container);
+
+        container.addEventListener('pointerdown', onPointerDown);
+        container.addEventListener('pointermove',  onPointerMove);
+        container.addEventListener('pointerup',    onPointerUp);
+        container.addEventListener('pointerleave', onPointerUp);
+        container.addEventListener('wheel', onWheel, {passive:true});
+
+        const visHandler = () => { if(document.hidden) cancelAnimationFrame(animId); else animate(); };
+        document.addEventListener('visibilitychange', visHandler);
+
+        animate();
+
+        cleanup = () => {
+          cancelAnimationFrame(animId);
+          document.removeEventListener('visibilitychange', visHandler);
+          ro.disconnect();
+          container.removeEventListener('pointerdown', onPointerDown);
+          container.removeEventListener('pointermove',  onPointerMove);
+          container.removeEventListener('pointerup',    onPointerUp);
+          container.removeEventListener('pointerleave', onPointerUp);
+          container.removeEventListener('wheel', onWheel, {passive:true});
+          try { if (renderer?.domElement?.parentNode === container) container.removeChild(renderer.domElement); } catch {}
+          try { texRef?.dispose?.(); } catch {}
+          try { mat.dispose(); } catch {}
+          try { geo.dispose(); } catch {}
+          try { renderer?.dispose?.(); } catch {}
+        };
+      };
+
+      probe.onerror = () => { loaderEl.textContent = 'Failed to load image'; };
+      probe.src = isSpecial ? path : path + (path.includes('?')?'&':'?') + 'v=' + Date.now();
+    });
+
+    return () => cleanup();
+  })();
+}
+
+    
 
   /* Template → DOM helpers */
   function fillTexts(root, data){
@@ -834,60 +1415,138 @@ function getOrCreateNumericId(){
 }
 
 
-  function renderProgress(root,pct,raised){
-    const bar=root.querySelector('.bar'),fill=bar.querySelector('i'),stats=root.querySelector('.row.small.stats');
-    bar.setAttribute('aria-valuenow',pct); fill.style.width=pct+'%';
-    stats.querySelector('[data-text="raisedLabel"]').textContent = `${money(raised)} raised`;
-    stats.querySelector('[data-text="progressPct"]').textContent = `${pct}%`;
-    stats.querySelector('[data-text="raisedTotal"]').textContent = money(raised);
-    const tip=stats.querySelector('.tooltip'), raisedEl=stats.querySelector('.raised'), tipId=uid('tt'); tip.id=tipId; raisedEl.setAttribute('aria-describedby',tipId);
-    ['mouseenter','focus'].forEach(ev=>raisedEl.addEventListener(ev,()=>tip.classList.add('open')));
-    ['mouseleave','blur'].forEach(ev=>raisedEl.addEventListener(ev,()=>tip.classList.remove('open')));
-    function buildSparkPaths(vals, w=220, h=80, pad=10){
-  const mx = Math.max(...vals, 1);
-  const innerW = w - pad*2, innerH = h - pad*2;
-  const step = innerW / (vals.length - 1);
-  let d = '';
-  vals.forEach((v,i)=>{
-    const x = pad + i*step;
-    const y = h - pad - (v/mx)*innerH;
-    d += (i ? 'L':'M') + x + ',' + y;
+  function renderProgress(root, pct, raised, months){
+  // normalize months: 2..24
+  months = Math.max(2, Math.min(24, parseInt(months || 3)));
+
+  const bar = root.querySelector('.bar'),
+        fill = bar.querySelector('i'),
+        stats = root.querySelector('.row.small.stats');
+
+  bar.setAttribute('aria-valuenow', pct);
+  fill.style.width = pct + '%';
+
+  stats.querySelector('[data-text="raisedLabel"]').textContent = `${money(raised)} raised`;
+  stats.querySelector('[data-text="progressPct"]').textContent  = `${pct}%`;
+  stats.querySelector('[data-text="raisedTotal"]').textContent  = money(raised);
+
+  const tip     = stats.querySelector('.tooltip'),
+        raisedEl= stats.querySelector('.raised'),
+        tipId   = uid('tt');
+
+  tip.id = tipId;
+  raisedEl.setAttribute('aria-describedby', tipId);
+
+  // dynamic tooltip text
+  const monthsText = `${months} ${months === 1 ? 'month' : 'months'}`;
+  const ttHeader = tip.querySelector('.tt-h');
+  if (ttHeader) ttHeader.textContent = `Raised over last ${monthsText}`;
+  const ttFooter = tip.querySelector('.tt-f');
+  if (ttFooter) ttFooter.innerHTML = `<strong data-text="raisedTotal">${money(raised)}</strong> total · ${monthsText}`;
+
+  ['mouseenter','focus'].forEach(ev => raisedEl.addEventListener(ev, () => tip.classList.add('open')));
+  ['mouseleave','blur' ].forEach(ev => raisedEl.addEventListener(ev, () => tip.classList.remove('open')));
+
+  // --- sparkline helpers (unchanged) ---
+  function buildSparkPaths(vals, w=220, h=80, pad=10){
+    const mx = Math.max(...vals, 1);
+    const innerW = w - pad*2, innerH = h - pad*2;
+    const step = innerW / (vals.length - 1);
+    let d = '';
+    vals.forEach((v,i)=>{
+      const x = pad + i*step;
+      const y = h - pad - (v/mx)*innerH;
+      d += (i ? 'L':'M') + x + ',' + y;
+    });
+    const area = `${d} L ${pad + innerW},${h - pad} L ${pad},${h - pad} Z`;
+    return { line: d, area };
+  }
+  function setupSparkTooltip(tooltipEl, values){
+    const svg  = tooltipEl.querySelector('svg.spark');
+    const line = svg.querySelector('path.line');
+    const area = svg.querySelector('path.area');
+
+    const { line: dl, area: da } = buildSparkPaths(values);
+    line.setAttribute('d', dl);
+    area.setAttribute('d', da);
+
+    const len = line.getTotalLength();
+    line.style.setProperty('--len', String(len));
+    line.classList.add('animate-stroke');
+    area.classList.add('animate-fill');
+  }
+
+  // build series with requested months (>= 2 points)
+  const points = months;
+  const series = Array.from({length: points}, (_, i) =>
+    Math.round((i + 1) * (raised / points) * (0.7 + Math.random() * 0.6))
+  );
+  setupSparkTooltip(root.querySelector('.tooltip'), series);
+}
+
+
+
+  
+  function renderTiers(root, lines){
+  const host = root.querySelector('[data-tiers]');
+  host.innerHTML = '';
+  (lines || []).forEach(line => {
+    const [l, r] = String(line||'').split('|').map(s => (s||'').trim());
+
+    const row = document.createElement('div');
+    row.className = 'tier-row';
+
+    const left  = document.createElement('span');
+    const right = document.createElement('span');
+
+    left.textContent  = l;
+    right.textContent = r;
+
+    row.appendChild(left);
+    row.appendChild(right);
+    host.appendChild(row);
   });
-  const area = `${d} L ${pad + innerW},${h - pad} L ${pad},${h - pad} Z`;
-  return { line: d, area };
 }
 
-function setupSparkTooltip(tooltipEl, values){
-  const svg  = tooltipEl.querySelector('svg.spark');
-  const line = svg.querySelector('path.line');
-  const area = svg.querySelector('path.area');
-
-  const { line: dl, area: da } = buildSparkPaths(values);
-  line.setAttribute('d', dl);
-  area.setAttribute('d', da);
-
-  // prepare animation
-  const len = line.getTotalLength();
-  line.style.setProperty('--len', String(len));
-  line.classList.add('animate-stroke');
-  area.classList.add('animate-fill');
-}
-// example series (замени на реальные, если есть)
-const series = Array.from({length:12}, (_,i)=> Math.round((i+1) * (raised/12) * (0.7 + Math.random()*0.6)));
-setupSparkTooltip(root.querySelector('.tooltip'), series);
-
-
-  }
-
-  function renderTiers(root,lines){
-    const host=root.querySelector('[data-tiers]'); host.innerHTML='';
-    (lines||[]).forEach(line=>{ const [l,r]=(line||'').split('|').map(s=>(s||'').trim()); const row=document.createElement('div'); row.className='tier-row'; row.innerHTML=`<span>${l}</span><span>${r}</span>`; host.appendChild(row); });
-  }
 
   function renderVerified(root,on){ root.querySelector('[data-verified]').style.display = on ? 'inline-block' : 'none'; }
   function wireShare(root){ const b=root.querySelector('.share-btn'); if(!b) return; b.addEventListener('click',async e=>{ e.preventDefault(); const title=root.querySelector('.title')?.textContent?.trim()||'Project'; const url=location.href; if(navigator.share){ try{await navigator.share({title,url});}catch{} } else { await navigator.clipboard.writeText(url); b.title='Link copied'; setTimeout(()=>b.title='',1500); } }); }
   function wireTiers(root){ const btn=root.querySelector('.tier-link'),menu=root.querySelector('.tier-menu'); if(!btn||!menu) return; btn.addEventListener('click',e=>{ const open=menu.hasAttribute('hidden'); menu.toggleAttribute('hidden'); btn.setAttribute('aria-expanded',open?'true':'false'); e.preventDefault(); e.stopPropagation(); }); }
 
+  function renderPagerInMedia(root){
+  const host = root.querySelector('[data-pager]');
+  if (!host) return;
+
+  host.innerHTML = '';
+  const total = Math.min(Array.isArray(panoList) ? panoList.length : 0, MAX_PANOS);
+  if (total < 2){ host.style.display = 'none'; return; }
+  host.style.display = 'flex';
+
+  for (let i = 0; i < total; i++){
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'dot';
+    btn.setAttribute('aria-label', `Show image ${i+1}`);
+    if (i === activePanoIndex) btn.setAttribute('aria-current','true');
+
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (i === activePanoIndex) return;
+      activePanoIndex = i;
+      setPanoHiddenToActive();
+      renderPreview();
+    });
+
+    host.appendChild(btn);
+  }
+}
+
+
+  
+  
+  
+  
+  
   /* Построение карточки (ленивая инициализация панорамы) */
   const tpl = document.getElementById('card-tpl');
   function makeCard(data){
@@ -896,25 +1555,39 @@ setupSparkTooltip(root.querySelector('.tooltip'), series);
     article.setAttribute('aria-label', `${data.title1} — ${data.title2}`);
 
     fillTexts(frag, {
-  ...data, // <-- тут есть projectId
+  ...data,
   raisedLabel: `${money(data.raised)} raised`,
   progressPct: `${data.progress}%`,
   raisedTotal: money(data.raised),
   daysLeft: `${data.daysLeft} days left`
 });
 
+// 👉 делаем заголовок кликабельным и ведём на страницу лота
+const linkEl = frag.querySelector('[data-project-link]');
+if (linkEl) {
+  const url = titleToProductUrl(data.title1);   // https://ishare.ca/<slug>
+  if (url) {
+    linkEl.href = url;
+    linkEl.setAttribute('aria-label', `Open ${data.title1}`);
+  } else {
+    linkEl.removeAttribute('href');
+    linkEl.removeAttribute('aria-label');
+  }
+}
+
+
 
     renderChips(frag, data.chips);
-    renderProgress(frag, data.progress||0, data.raised||0);
+    renderProgress(frag, data.progress||0, data.raised||0, data.monthsOnGraph||3);
     renderTiers(frag, data.tiers||[]);
     renderVerified(frag, !!data.verified);
-    wireShare(frag); wireTiers(frag);
+    wireShare(frag); wireTiers(frag); renderPagerInMedia(frag);
 
     const pane   = frag.querySelector('[data-pano]');
     const loader = frag.querySelector('[data-loader]');
-    const init = () => initPanoEl(pane, loader, [data.panoSrc], {
-      yaw:data.yaw, pitch:data.pitch, autoRotate:data.autoRotate, wheelZoom:data.wheelZoom
-    });
+    const init = () => initPanoEl(pane, loader, getPanoCandidates(), {
+    yaw:data.yaw, pitch:data.pitch, autoRotate:data.autoRotate, wheelZoom:data.wheelZoom
+});
 
     return { node: frag, init };
   }
@@ -967,8 +1640,13 @@ function readForm(form){
   const tiers = (fd.get('tiers') || '')
     .split('\n').map(s => s.trim()).filter(Boolean);
 
+  // safe parse for months (2..24)
+  const monthsRaw = String(fd.get('raisedMonths') ?? '').trim();
+  const monthsVal = parseInt(monthsRaw, 10);
+  const months = clamp(Number.isFinite(monthsVal) ? monthsVal : 3, 2, 24);
+
   return {
-    projectId: getOrCreateNumericId(),   // ← всегда 6 цифр
+    projectId: getOrCreateNumericId(),
 
     title1:    (fd.get('title1')    || '').trim(),
     title2:    (fd.get('title2')    || '').trim(),
@@ -977,12 +1655,14 @@ function readForm(form){
 
     panoSrc: fd.get('panoSrc') || DEFAULT_PANO,
 
-
     chips:     buildChipsFromOptions(fd),
 
     progress:  clamp(num('progress', 0), 0, 100),
     raised:    Math.max(0, num('raised', 0)),
     daysLeft:  Math.max(0, num('daysLeft', 0)),
+
+    monthsOnGraph: months,
+    raisedMonths:  months,
 
     naming:    (fd.get('naming')   || '').trim(),
     location:  (fd.get('location') || '').trim(),
@@ -1003,47 +1683,57 @@ function readForm(form){
 
 
 
+let destroyCurrent = null;
+
   /* Live preview */
   const form = document.getElementById('card-form');
   const preview = document.getElementById('preview');
+  
+  
+  
+  
   function ensurePanoHiddenInput() {
-  if (!form.elements.panoSrc) {
-    const hidden = document.createElement('input');
-    hidden.type = 'hidden';
-    hidden.name = 'panoSrc';
-    hidden.value = 'img/pano/panorama.jpg';
-    form.appendChild(hidden);
+  let el = form.querySelector('input[name="panoSrc"]');
+  if (!el) {
+    el = document.createElement('input');
+    el.type = 'hidden';
+    el.name = 'panoSrc';
+    el.value = DEFAULT_PANO; // вместо хардкода './img/pano/panorama.jpg'
+    form.appendChild(el);
   }
+  return el; // важное — возвращаем элемент
 }
+
 ensurePanoHiddenInput();
 
 
-function genHexId6(){
-  let s = Math.random().toString(16).slice(2, 8).toUpperCase();
-  while (s.length < 6) s = ('000000' + s).slice(-6); // страхуемся
-  return s;
-}
-function ensureProjectId(){
-  const key = 'cardProjectId';
-  let pid = localStorage.getItem(key);
-  if (!pid) { pid = genHexId6(); localStorage.setItem(key, pid); }
-  const badge = document.getElementById('pidBadge');
-  const hidden = document.getElementById('projectId');
-  if (badge)  badge.textContent = pid;
-  if (hidden) hidden.value = pid;
-}
-ensureProjectId();
+
 
 
 
 
 
   function renderPreview(){
-    preview.innerHTML = '';
-    const built = makeCard( readForm(form) );
-    preview.appendChild(built.node);   // сначала вставили в DOM
-    built.init();                      // затем инициализировали three.js
+  // 1) остановить и убрать прошлую сцену, если была
+  setPanoHiddenToActive();
+
+  if (typeof destroyCurrent === 'function') {
+    try { destroyCurrent(); } catch(e) {}
+    destroyCurrent = null;
   }
+
+  // 2) собрать и вставить новую карточку
+  preview.innerHTML = '';
+  const built = makeCard( readForm(form) );
+  preview.appendChild(built.node);
+
+  // 3) инициализировать панораму и сохранить «очистку»
+  const cleanup = built.init();   // initPanoEl возвращает функцию очистки
+  if (typeof cleanup === 'function') {
+    destroyCurrent = cleanup;
+  }
+  }
+
   form.addEventListener('input', renderPreview);
   form.addEventListener('change', renderPreview);
   renderPreview();
@@ -1087,22 +1777,109 @@ ensureProjectId();
   const panoFile = document.getElementById('panoFile');
   const panoName = document.getElementById('panoFileName');
 
-  function adoptFile(file){
-  if(!file){ alert('Please choose an image file.'); return; }
-  const okMime = file.type && file.type.startsWith('image/');
-  const okExt  = /\.(jpe?g|png|webp)$/i.test(file.name || '');
-  if(!okMime && !okExt){ alert('Please choose a JPG/PNG/WEBP image.'); return; }
+  
+  
+  // Список панорам (data URL или пути). Первый — «обложка».
 
-  const reader = new FileReader();
-  reader.onload = () => {
-    ensurePanoHiddenInput();                         // ← make sure it exists
-    const url = reader.result;                       // data:image/...
-    form.querySelectorAll('input[name="panoSrc"]').forEach(el => el.value = url);
-    panoName.textContent = 'Loaded: ' + (file.name || 'image');
-    renderPreview();
-  };
-  reader.readAsDataURL(file);
+
+
+function getPanoCandidates(){
+  if (Array.isArray(panoList) && panoList.length){
+    clampActive();
+    const list = panoList.slice(0, MAX_PANOS);
+    const cur  = list[activePanoIndex] ?? list[0];
+    const rest = list.filter((_,i)=> i !== activePanoIndex);
+    return [cur, ...rest]; // активный — первым
+  }
+  const single = form.querySelector('input[name="panoSrc"]')?.value || DEFAULT_PANO;
+  return [single];
 }
+
+
+
+
+
+
+function renderPanoGallery(){
+  const host = document.getElementById('panoGallery');
+  if (!host) return;
+  host.innerHTML = '';
+
+  panoList.forEach((src, idx) => {
+    const item = document.createElement('div');
+    item.className = 'thumb' + (idx === activePanoIndex ? ' active' : '');
+    item.innerHTML = `
+      <img src="${src}">
+      <button class="remove" title="Remove" aria-label="Remove this image">×</button>
+      ${idx===activePanoIndex ? '<span class="badge">Active</span>' : ''}
+    `;
+    item.querySelector('.remove').addEventListener('click', (e) => {
+  e.stopPropagation();
+  panoList.splice(idx, 1);
+  
+
+  clampActive();
+  setPanoHiddenToActive();
+  renderPanoGallery();
+  renderPreview();
+});
+
+    // клик по миниатюре — сделать её «обложкой» (переместить в начало)
+    item.addEventListener('click', () => {
+   if (idx !== activePanoIndex){
+     activePanoIndex = idx;
+     setPanoHiddenToActive();
+     renderPanoGallery();
+     renderPreview();
+   }
+ });
+    host.appendChild(item);
+  });
+
+  // подпись с количеством
+  const nameEl = document.getElementById('panoFileName');
+  if (nameEl) nameEl.textContent = panoList.length ? `${panoList.length} image(s) in gallery` : '';
+}
+  
+  
+  
+  
+  // ДО: const MAX_PANOS = 12; let panoList = [];
+function adoptFiles(fileList){
+  const files = Array.from(fileList).filter(f =>
+    (f.type && f.type.startsWith('image/')) ||
+    /\.(jpe?g|png|webp)$/i.test(f.name || '')
+  );
+  if (!files.length){
+    alert('Please choose JPG/PNG/WEBP image(s).');
+    return;
+  }
+
+  // лимит галереи
+  const room = Math.max(0, MAX_PANOS - panoList.length);
+  const take = files.slice(0, room);
+  if (take.length < files.length){
+    alert(`Only ${room} more image(s) can be added (max ${MAX_PANOS}).`);
+  }
+
+  let done = 0;
+  take.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      panoList.push(reader.result);   // data:image/...
+      done++;
+      if (done === take.length){
+        
+        renderPanoGallery();          // перерисовать миниатюры
+        renderPreview();              // перерисовать карточку
+        const nameEl = document.getElementById('panoFileName');
+        if (nameEl) nameEl.textContent = `${panoList.length} image(s) in gallery`;
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 
 
   panoDrop.addEventListener('click', ()=> panoFile.click());
@@ -1111,10 +1888,89 @@ ensureProjectId();
   e.preventDefault();         // label и так откроет инпут
   e.stopPropagation();        // не отдаём клик наружу на panoDrop
 });
-  panoFile.addEventListener('change', ()=> adoptFile(panoFile.files[0]));
+  panoFile.addEventListener('change', () => {
+  adoptFiles(panoFile.files);
+  panoFile.value = ''; // сбросить, чтобы одно и то же можно выбрать снова
+});
   panoDrop.addEventListener('dragover', e=>{ e.preventDefault(); panoDrop.classList.add('over'); });
   panoDrop.addEventListener('dragleave', ()=> panoDrop.classList.remove('over'));
-  panoDrop.addEventListener('drop', e=>{ e.preventDefault(); panoDrop.classList.remove('over'); const f=e.dataTransfer.files?.[0]; if(f) adoptFile(f); });
+  panoDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  panoDrop.classList.remove('over');
+  adoptFiles(e.dataTransfer.files);
+});
+
+
+/* ===== Launch campaign → сохранить карточку в каталог и открыть catalog.html ===== */
+
+// slug из title1 (использует твою translitRU)
+function titleToSlug(title){
+  const latin = translitRU(String(title||''))
+    .normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase();
+  return latin.replace(/[^a-z0-9]+/g,'').slice(0,80) || 'project';
+}
+
+// ↓↓↓ замените существующий обработчик (или добавьте, если его нет)
+
+document.getElementById('launch').addEventListener('click', async () => {
+  // 1) Открываем вкладку СИНХРОННО и БЕЗ noopener/noreferrer — получаем живой хэндл
+  const popup = window.open('about:blank', '_blank');
+  if (popup) {
+    try {
+      popup.document.write('<!doctype html><title>Catalog</title><meta charset="utf-8"><p style="font:14px system-ui;padding:16px">Preparing campaign…</p>');
+      popup.document.close();
+    } catch {}
+  }
+
+  // 2) Собираем данные и пишем в localStorage (как у тебя)
+  const item = readForm(form);
+  item.projectId = mintUniqueId6();
+
+  let prep;
+  try { prep = await prepareGalleryForCatalog(); }
+  catch { prep = { compact: [], idx: 0, cover: item.panoSrc || DEFAULT_PANO }; }
+
+  item.panoList = prep.compact;
+  item.activePanoIndex = prep.idx;
+  item.panoSrc = prep.cover;
+
+  const KEY = 'catalogItems';
+  try {
+    const arr = JSON.parse(localStorage.getItem(KEY) || '[]');
+    arr.unshift(item);
+    localStorage.setItem(KEY, JSON.stringify(arr));
+  } catch (e) {
+    try {
+      item.panoList = [];
+      const arr = JSON.parse(localStorage.getItem(KEY) || '[]');
+      arr.unshift(item);
+      localStorage.setItem(KEY, JSON.stringify(arr));
+    } catch {
+      // если совсем не удалось — закрываем пустую вкладку и выходим
+      if (popup && !popup.closed) popup.close();
+      alert('Не получилось сохранить в каталог (возможно, переполнен localStorage).');
+      return;
+    }
+  }
+
+  // 3) Перенаправляем ИМЕННО новую вкладку. Текущую страницу не трогаем
+  if (popup && !popup.closed) {
+    popup.location.href = 'catalog.html';
+  } else {
+    // запасной план: пробуем открыть через невидимую ссылку в новой вкладке
+    const a = document.createElement('a');
+    a.href = 'catalog.html';
+    a.target = '_blank';
+    a.rel = 'noopener';          // безопасность
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    // текущую страницу НЕ перенаправляем
+  }
+});
+
+
 
 
 
@@ -1123,8 +1979,3 @@ ensureProjectId();
 </script>
 </body>
 </html>
-
-
-
-
-
